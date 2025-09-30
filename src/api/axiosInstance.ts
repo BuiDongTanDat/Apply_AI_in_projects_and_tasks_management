@@ -44,7 +44,7 @@ axiosInstance.interceptors.response.use(
       }
     } else {
       console.error('Network error:', error.message);
-      alert('Lỗi mạng hoặc máy chủ không phản hồi.');
+      alert('Lỗi mạng hoặc máy chủ không phản hồi.','','error');
     }
 
     return Promise.reject(error);

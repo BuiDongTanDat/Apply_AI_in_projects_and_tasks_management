@@ -33,8 +33,7 @@ const RegisterForm = () => {
       setAccessToken(response.metadata.tokens.accessToken);
       alert('Registration successful', 'Success', 'success');
     }
-    console.log('response', response)
-
+    console.log('response', isLoading)
   }
 
   return (

@@ -9,30 +9,39 @@ import { StylingInput } from "@/components/element/input";
 import { Link } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { authApi } from "@/api/auth.api";
-import { alert } from '@/provider/AlertService';
+import { alert } from "@/provider/AlertService";
 import { useCookie } from "@/hooks/logic/useCookie";
-
-
+import { useState } from "react";
 
 const LoginForm = () => {
+  const [, setAccessToken] = useCookie("access_token", "", 7);
 
-  const [, setAccessToken,] = useCookie('access_token', '', 7);
+  // state for loading
+  const [isLoading, setIsLoading] = useState(false);
   // react hook form
-  const {register, handleSubmit, formState: {errors, isLoading}} = useForm<LoginSchemaType>({
-    resolver: zodResolver(loginSchema)
-  })
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginSchemaType>({
+    resolver: zodResolver(loginSchema),
+  });
 
   // function to submit
   const onSubmit: SubmitHandler<LoginSchemaType> = async (data) => {
-    
-    const response = await authApi.login(data);
-    if(response){
-      setAccessToken(response.metadata.tokens.accessToken);
-      alert('Login successful', 'Success', 'success');
+    setIsLoading(true);
+    try {
+      const response = await authApi.login(data);
+      if (response) {
+        setAccessToken(response.metadata.tokens.accessToken);
+        alert("Login successful", "Success", "success");
+      }
+    } catch (error ) {
+      console.log('error', error)
+    } finally {
+      setIsLoading(false)
     }
-    console.log('response', response)
-
-  }
+  };
 
   return (
     <div className="form-container">
@@ -53,34 +62,71 @@ const LoginForm = () => {
 
       {/* section form */}
       <form className="mt-6 gap-4" onSubmit={handleSubmit(onSubmit)}>
-        <Button variant="white" leftIcon={<FcGoogle  size={22}/>} className="mb-6" type="button">
+        <Button
+          variant="white"
+          leftIcon={<FcGoogle size={22} />}
+          className="mb-6"
+          type="button"
+        >
           Login with Google
         </Button>
-        <Button variant="white" leftIcon={<FaGithub  size={22}/>} className="mb-6" type="button">
+        <Button
+          variant="white"
+          leftIcon={<FaGithub size={22} />}
+          className="mb-6"
+          type="button"
+        >
           Login with GitHub
         </Button>
 
         <div className="form-group">
-          <label htmlFor="email" className="form-label">Email</label>
-          <StylingInput placeholder="youremail@domain.com" variant="normal" {...register("email")} />
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+          <label htmlFor="email" className="form-label">
+            Email
+          </label>
+          <StylingInput
+            placeholder="youremail@domain.com"
+            variant="normal"
+            {...register("email")}
+          />
+          {errors.email && (
+            <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+          )}
         </div>
         <div className="form-group">
           <div className="form-label-group">
-            <label htmlFor="password" className="form-label">Password</label>
+            <label htmlFor="password" className="form-label">
+              Password
+            </label>
             <Link to="/forgot-password">Forgot password?</Link>
           </div>
-          <StylingInput placeholder="********" variant="normal" type="password" {...register("password")} />
-          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+          <StylingInput
+            placeholder="********"
+            variant="normal"
+            type="password"
+            {...register("password")}
+          />
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.password.message}
+            </p>
+          )}
         </div>
 
-        <Button variant="primary" type="submit" className="mt-4" isLoading={isLoading} >
+        <Button
+          variant="primary"
+          type="submit"
+          className="mt-4"
+          isLoading={isLoading}
+        >
           {isLoading ? "Logging in..." : "Login"}
         </Button>
       </form>
 
       <div className="text-sm text-gray-400 mt-3 w-full text-center">
-        Don't have an account? <Link to="/register" className="text-blue-600 font-medium">Register</Link>
+        Don't have an account?{" "}
+        <Link to="/register" className="text-blue-600 font-medium">
+          Register
+        </Link>
       </div>
     </div>
   );
