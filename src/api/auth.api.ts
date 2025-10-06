@@ -3,12 +3,12 @@ import axiosInstance from "./axiosInstance";
 
 
 const login = async (data: any) => {
-    const response = await axiosInstance.post("/user/signin", data);
+    const response = await axiosInstance.post("/auth/login", data);
     return response.data;
 };
 
 const register = async (data: any) => {
-    const response = await axiosInstance.post("/user/signup", data);
+    const response = await axiosInstance.post("/auth/register", data);
     return response.data;
 };
 

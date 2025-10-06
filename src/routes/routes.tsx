@@ -1,9 +1,11 @@
-import {  createBrowserRouter } from "react-router";
+import { createBrowserRouter } from "react-router";
 import { publicPermission } from "./publicPermission";
 import PageTitle from "./PageTitle";
 import Landing from "@/pages/Landing";
 import NotFound from "@/pages/NotFound";
 import { AuthLayout } from "@/pages/auth/Layout";
+import { dashboardRoutes } from "./adminRoutes";
+import Tasks from "@/pages/task";
 
 const publicRoutes = createBrowserRouter([
   {
@@ -20,9 +22,14 @@ const publicRoutes = createBrowserRouter([
   },
   {
     path: publicPermission.register,
-    element: <PageTitle title="Register" element={<AuthLayout type="register" />} />,
+    element: (
+      <PageTitle title="Register" element={<AuthLayout type="register" />} />
+    ),
   },
-
-])
+  {
+    path: dashboardRoutes.tasks,
+    element: <PageTitle title="Tasks" element={<Tasks />} />,
+  },
+]);
 
 export { publicRoutes };

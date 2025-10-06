@@ -33,13 +33,15 @@ const LoginForm = () => {
     try {
       const response = await authApi.login(data);
       if (response) {
-        setAccessToken(response.metadata.tokens.accessToken);
+        // debugger;
+        setAccessToken(response.metadata.token.accessToken);
         alert("Login successful", "Success", "success");
+        console.log("response", response);
       }
-    } catch (error ) {
-      console.log('error', error)
+    } catch (error) {
+      console.log("error", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   };
 

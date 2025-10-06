@@ -1,5 +1,7 @@
 
-export const adminSidebarRoutes = {
-  dashboad: "admin/dashboard",
+export const dashboardRoutes = {
+  dashboard: "dashboard",
+  tasks: "task",
+  staffs: "staff",
 }
 
