@@ -17,6 +17,7 @@ import ProjectDetailPage from "@/pages/admin/projects/ProjectDetailPage";
 import ProjectLayout, {
 } from "@/components/layout/Layout";
 import Dashboard from "@/pages/admin/Dashboard";
+import WorkspaceDetailPage from "@/pages/admin/workspaces/WorkspaceDetailPage";
 
 const publicRoutes = createBrowserRouter([
   {
@@ -63,11 +64,13 @@ const publicRoutes = createBrowserRouter([
     path: "/projects/:projectId",
     element: <PageTitle title="Project Detail" element={<ProjectLayout><ProjectDetailPage /></ProjectLayout>} />,
   },
-  
-  
   {
     path: "/workspaces",
     element: <PageTitle title="Workspaces" element={<ProjectLayout><WorkspacesPage /></ProjectLayout>} />,
+  },
+  {
+    path: "/workspaces/:workspaceId",
+    element: <PageTitle title="Workspace Detail" element={<ProjectLayout><WorkspaceDetailPage  /></ProjectLayout>} />,
   },
   {
     path: "/teams",

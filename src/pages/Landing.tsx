@@ -33,7 +33,7 @@ const Landing = () => {
       className="min-h-screen flex flex-col items-center justify-start overflow-hidden"
       style={{
         backgroundColor: "#902F0B",
-        transition: "opacity 0.5s ease, transform 0.5s ease",
+        transition: "opacity 0.3s ease, transform 0.3s ease",
         opacity: showBg ? 1 : 0,
       }}
     >
@@ -57,7 +57,7 @@ const Landing = () => {
             zIndex: 0,
             pointerEvents: "none",
             opacity: showFrame ? 1 : 0,
-            transition: "opacity 0.5s cubic-bezier(0.4,0,0.2,1)",
+            transition: "opacity 0.3s cubic-bezier(0.4,0,0.2,1)",
           }}
         />
 
@@ -74,8 +74,8 @@ const Landing = () => {
               opacity: showCards ? 1 : 0,
               transform: `translateY(${showCards ? 0 : 40}px)`,
               transition: `
-                opacity 0.5s cubic-bezier(0.4,0,0.2,1) ${idx * 0.15}s,
-                transform 0.5s cubic-bezier(0.4,0,0.2,1) ${idx * 0.15}s
+                opacity 0.3s cubic-bezier(0.4,0,0.2,1) ${idx * 0.15}s,
+                transform 0.3s cubic-bezier(0.4,0,0.2,1) ${idx * 0.15}s
               `,
             }}
             className="absolute"

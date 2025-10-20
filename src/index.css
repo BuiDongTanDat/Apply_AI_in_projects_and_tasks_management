@@ -624,3 +624,7 @@ body{
   --primary: #902F0B;
   --primary-hover: #F8E4C1;
 }
+
+body {
+  background-color: #f9fafb; /* tương đương bg-gray-50 của Tailwind */
+}

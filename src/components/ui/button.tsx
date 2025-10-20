@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm rounded-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm rounded font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -16,9 +16,9 @@ const buttonVariants = cva(
         ghost: "hover:bg-[var(--brand-hover)] hover:text-[var(--brand)]",
         link: "text-[var(--brand)] underline-offset-4 hover:underline",
         // Menu variants
-        menuItem: "w-full justify-start text-muted-foreground hover:bg-[var(--brand-hover)] hover:text-[var(--brand)] data-[active=true]:bg-[var(--brand)] data-[active=true]:text-[var(--brand-foreground)] hover:scale-105 active:scale-95 duration-150 transition-transform",
-        menuSubmenu: "w-full justify-start text-muted-foreground hover:bg-[var(--brand-hover)] hover:text-[var(--brand)] data-[active=true]:bg-[var(--brand)] data-[active=true]:text-[var(--brand-foreground)] hover:scale-105 active:scale-95 duration-150 transition-transform",
-        subMenuItem: "w-full justify-between font-normal text-muted-foreground hover:bg-[var(--brand-hover)] hover:text-[var(--brand)] data-[active=true]:bg-[var(--brand-hover)] data-[active=true]:text-[var(--brand)] data-[active=true]:font-semibold hover:scale-105 active:scale-95 duration-150 transition-transform",
+        menuItem: "w-full justify-start text-muted-foreground hover:bg-[var(--brand-hover)] hover:text-[var(--brand)] data-[active=true]:bg-[var(--brand)] data-[active=true]:text-[var(--brand-foreground)] hover:scale-103 active:scale-95 duration-150 transition-transform",
+        menuSubmenu: "w-full justify-start text-muted-foreground hover:bg-[var(--brand-hover)] hover:text-[var(--brand)] data-[active=true]:bg-[var(--brand)] data-[active=true]:text-[var(--brand-foreground)] hover:scale-103 active:scale-95 duration-150 transition-transform",
+        subMenuItem: "w-full justify-between font-normal text-muted-foreground hover:bg-[var(--brand-hover)] hover:text-[var(--brand)] data-[active=true]:bg-[var(--brand-hover)] data-[active=true]:text-[var(--brand)] data-[active=true]:font-semibold hover:scale-102 active:scale-95 duration-150 transition-transform",
         // Action button
         actionNormal: `
             rounded-sm

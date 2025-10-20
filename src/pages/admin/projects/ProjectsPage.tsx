@@ -19,7 +19,7 @@ const ProjectsPage: React.FC<{ type?: "my" }> = ({ type }) => {
 	const [tab, setTab] = useState<"my" | "others">(type === "my" ? "my" : "others");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
-	const projectsPerPage = 6;
+	const projectsPerPage = 9;
 	const navigate = useNavigate(); // Thêm hook
 
 	// Reset về trang 1 khi search
@@ -51,7 +51,7 @@ const ProjectsPage: React.FC<{ type?: "my" }> = ({ type }) => {
 	};
 
 	return (
-		<div className="min-h-screen bg-gray-50 px-0">
+		<div className=" px-0">
 			{/* Sticky header container */}
 			<div className="sticky top-[56px] z-10 bg-white shadow flex flex-col px-6 py-4 mb-0 w-full">
 				{/* Hàng trên: title + search */}
@@ -129,7 +129,7 @@ const ProjectsPage: React.FC<{ type?: "my" }> = ({ type }) => {
 			</div>
 			{/* Scrollable content */}
 			<div
-				className="px-2 md:px-6 pt-4 h-[calc(100vh-56px-88px)] overflow-y-auto"
+				className="px-2 md:px-6 pt-4 "
 			>
 				{view === "card" ? (
 					<ProjectsCardView
@@ -147,7 +147,7 @@ const ProjectsPage: React.FC<{ type?: "my" }> = ({ type }) => {
 					handlePageChange={handlePageChange}
 					handleNext={handleNext}
 					handlePrev={handlePrev}
-					className="mt-6 "
+					className="mt-2 "
 				/>
 			</div>
 		</div>

@@ -1,69 +1,83 @@
 import React from "react";
-import { Pencil } from "lucide-react";
+import { Users, FolderOpen, Clock } from "lucide-react";
 
+// Sửa lại type cho phù hợp dữ liệu mới
 type Workspace = {
-  id: number;
+  id: string | number;
   name: string;
   description: string;
-  date: string;
-  members: { id: number; avatar: string }[];
-  issues: number;
+  date?: string;
+  members: { id: string; avatar: string }[];
+  issues?: number;
   private?: boolean;
+  imagePath?: string;
+  projects?: any[];
 };
 
 interface Props {
   workspaces: Workspace[];
   cardSize?: "sm" | "md";
+  onWorkspaceClick?: (ws: Workspace) => void;
 }
 
-const WorkspaceCardView: React.FC<Props> = ({ workspaces, cardSize = "md" }) => (
+const WorkspaceCardView: React.FC<Props> = ({ workspaces, cardSize = "md", onWorkspaceClick }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-150 animate-fade-in">
-    {workspaces.map((ws) => (
-      <div
-        key={ws.id}
-        className={`bg-white rounded-xl shadow ${cardSize === "sm" ? "p-3" : "p-5"} flex flex-col gap-3 relative border border-gray-100`}
-        style={cardSize === "sm" ? { minHeight: 180, fontSize: "0.95rem" } : {}}
-      >
-        <div className="flex items-center justify-between mb-1">
-          <div className={`font-bold ${cardSize === "sm" ? "text-base" : "text-lg"} flex items-center gap-2`}>
-            {ws.name}
-            <Pencil size={16} className="text-gray-400 cursor-pointer" />
+    {workspaces.map((ws) => {
+      const bgImage = ws.imagePath ? ws.imagePath : "/images/items/temp_workspace.png";
+      return (
+        <div
+          key={ws.id}
+          className={`relative rounded-sm overflow-hidden shadow  cursor-pointer group
+            transition-transform hover:shadow-md hover:scale-103 active:scale-95`}
+          style={{ minHeight: cardSize === "sm" ? 150 : 220 }}
+          onClick={() => onWorkspaceClick?.(ws)}
+        >
+          {/* Background image with overlay */}
+          <div className="absolute inset-0 z-0">
+            <div
+              className="w-full h-full bg-cover bg-center transition-transform duration-300 ease-in-out group-hover:scale-110"
+              style={{
+                backgroundImage: `url('${bgImage}')`,
+                filter: "blur(0px) brightness(0.65)",
+              }}
+            />
+            <div className="absolute inset-0 bg-black/30 z-10" />
           </div>
-          {ws.private && (
-            <span className="bg-red-100 text-red-600 px-3 py-0.5 rounded text-xs font-semibold">
-              Private
-            </span>
-          )}
-        </div>
-        <hr className="border-gray-300 mb-2" />
-        <div className={`text-sm text-gray-700 mb-2 ${cardSize === "sm" ? "line-clamp-2" : ""}`}>{ws.description}</div>
-        <div className="flex items-center gap-2 text-xs text-red-500 font-semibold mb-2">
-          <span className="material-icons text-base">hourglass_empty</span>
-          {ws.date}
-        </div>
-        <div className="flex items-center justify-between mt-auto">
-          <div className="flex -space-x-2">
-            {ws.members.slice(0, 3).map((member) => (
-              <img
-                key={member.id}
-                src={member.avatar}
-                alt=""
-                className={`rounded-full border-2 border-white shadow ${cardSize === "sm" ? "w-7 h-7" : "w-8 h-8"}`}
-              />
-            ))}
-            {ws.members.length > 3 && (
-              <span className="ml-2 text-xs bg-red-100 text-red-600 rounded-full px-2 py-0.5 font-semibold flex items-center">
-                +{ws.members.length - 3}
-              </span>
-            )}
+          {/* Content */}
+          <div className="relative z-20 flex flex-col h-full justify-between p-5">
+            <div>
+              <div className="font-bold text-lg text-white mb-1 flex items-center gap-2">
+                {ws.name}
+                {ws.private && (
+                  <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs font-semibold ml-2">
+                    Private
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-gray-100 mb-2 line-clamp-2">{ws.description}</div>
+            </div>
+            <div className="flex items-center justify-end mt-4">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1 text-xs text-gray-100">
+                  <Users size={16} className="inline" />
+                  {ws.members?.length || 0} members
+                </span>
+                <span className="flex items-center gap-1 text-xs text-gray-100">
+                  <FolderOpen size={16} className="inline" />
+                  {ws.projects?.length || 0} projects
+                </span>
+              </div>
+              {ws.date && (
+                <span className="flex items-center gap-1 text-xs text-gray-200">
+                  <Clock size={14} className="inline" />
+                  {ws.date}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-1 text-xs text-gray-600">
-            <span className="material-icons text-base">folder_open</span>
-            {ws.issues} issues
-          </div>
         </div>
-      </div>
-    ))}
+      );
+    })}
   </div>
 );
 

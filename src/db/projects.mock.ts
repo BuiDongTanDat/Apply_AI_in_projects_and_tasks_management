@@ -5,14 +5,14 @@ export const mockProjects = [
 		workspaceName: "Workspace A",
 		description:
 			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-		date: "05 APRIL 2023",
+		date: "05/10/2025",
 		members: [
 			{ id: 1, avatar: "https://randomuser.me/api/portraits/men/32.jpg" },
 			{ id: 2, avatar: "https://randomuser.me/api/portraits/women/44.jpg" },
 			{ id: 3, avatar: "https://randomuser.me/api/portraits/men/45.jpg" },
 		],
 		issues: 14,
-		status: "",
+		status: "Public",
 		private: false,
 		tasks: [
 			{
@@ -72,7 +72,7 @@ export const mockProjects = [
 		workspaceName: "Workspace B",
 		description:
 			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-		date: "05 APRIL 2023",
+		date: "05/10/2025",
 		members: [
 			{ id: 1, avatar: "https://randomuser.me/api/portraits/men/32.jpg" },
 			{ id: 2, avatar: "https://randomuser.me/api/portraits/women/44.jpg" },
@@ -114,14 +114,14 @@ export const mockProjects = [
 		workspaceName: "Workspace C",
 		description:
 			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-		date: "05 APRIL 2023",
+		date: "05/10/2025",
 		members: [
 			{ id: 1, avatar: "https://randomuser.me/api/portraits/men/32.jpg" },
 			{ id: 2, avatar: "https://randomuser.me/api/portraits/women/44.jpg" },
 			{ id: 3, avatar: "https://randomuser.me/api/portraits/men/45.jpg" },
 		],
 		issues: 14,
-		status: "Offtrack",
+		status: "Public",
 		private: false,
 		tasks: [
 			{
@@ -180,14 +180,14 @@ export const mockProjects = [
 		workspaceName: "Workspace D",
 		description:
 			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-		date: "05 APRIL 2023",
+		date: "05/10/2025",
 		members: [
 			{ id: 1, avatar: "https://randomuser.me/api/portraits/men/32.jpg" },
 			{ id: 2, avatar: "https://randomuser.me/api/portraits/women/44.jpg" },
 			{ id: 3, avatar: "https://randomuser.me/api/portraits/men/45.jpg" },
 		],
 		issues: 14,
-		status: "Offtrack",
+		status: "Private",
 		private: false,
 		tasks: [
 			{
@@ -246,15 +246,15 @@ export const mockProjects = [
 		workspaceName: "Workspace E",
 		description:
 			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-		date: "05 APRIL 2023",
+		date: "05/10/2025",
 		members: [
 			{ id: 1, avatar: "https://randomuser.me/api/portraits/men/32.jpg" },
 			{ id: 2, avatar: "https://randomuser.me/api/portraits/women/44.jpg" },
 			{ id: 3, avatar: "https://randomuser.me/api/portraits/men/45.jpg" },
 		],
 		issues: 14,
-		status: "Offtrack",
-		private: false,
+		status: "Public",
+		private: true,
 		tasks: [
 			{
 				id: 1,
@@ -312,14 +312,14 @@ export const mockProjects = [
 		workspaceName: "Workspace F",
 		description:
 			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-		date: "05 APRIL 2023",
+		date: "05/10/2025",
 		members: [
 			{ id: 1, avatar: "https://randomuser.me/api/portraits/men/32.jpg" },
 			{ id: 2, avatar: "https://randomuser.me/api/portraits/women/44.jpg" },
 			{ id: 3, avatar: "https://randomuser.me/api/portraits/men/45.jpg" },
 		],
 		issues: 14,
-		status: "Offtrack",
+		status: "Private",
 		private: false,
 		tasks: [
 			{
@@ -354,14 +354,14 @@ export const mockProjects = [
 		workspaceName: "Workspace G",
 		description:
 			"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-		date: "05 APRIL 2023",
+		date: "05/10/2025",
 		members: [
 			{ id: 1, avatar: "https://randomuser.me/api/portraits/men/32.jpg" },
 			{ id: 2, avatar: "https://randomuser.me/api/portraits/women/44.jpg" },
 			{ id: 3, avatar: "https://randomuser.me/api/portraits/men/45.jpg" },
 		],
 		issues: 14,
-		status: "Offtrack",
+		status: "Private",
 		private: false,
 		tasks: [
 			{

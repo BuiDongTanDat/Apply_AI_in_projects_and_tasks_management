@@ -1,3 +1,4 @@
+import { StickyNote } from "lucide-react";
 import React from "react";
 
 type Project = {
@@ -9,6 +10,7 @@ type Project = {
   issues: number;
   status?: string;
   private?: boolean;
+  workspaceName?: string; 
 };
 
 interface Props {
@@ -16,33 +18,40 @@ interface Props {
   onProjectClick?: (projectId: number) => void;
 }
 
+
 const ProjectsCardView: React.FC<Props> = ({ projects, onProjectClick }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-150 animate-fade-in ">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-150 animate-fade-in">
     {projects.map((project) => (
       <div
         key={project.id}
-        className="bg-white rounded-lg shadow p-3 flex flex-col gap-1 relative cursor-pointer"
+        className="bg-white rounded-sm shadow hover:shadow-md p-3 flex flex-col gap-1 relative cursor-pointer  hover:scale-103 active:scale-95 transition-transform"
         onClick={() => onProjectClick?.(project.id)}
       >
         <div className="flex items-center justify-between">
-          <div className="font-semibold text-base flex items-center gap-1">
-            {project.name}
-            <span className="material-icons text-base text-gray-400 cursor-pointer">edit</span>
+          <div className="font-semibold text-base flex flex-col gap-0">
+            <span>{project.name}</span>
+            <span className="text-xs font-normal text-gray-600">/{project.workspaceName}</span>
           </div>
-          {project.private && (
-            <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs font-semibold">Private</span>
-          )}
-          {project.status === "Offtrack" && (
-            <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs font-semibold">Offtrack</span>
-          )}
+
+          {project.status === "Private" ? (
+            <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs font-semibold">
+              Private
+            </span>
+          ) : project.status === "Public" ? (
+            <span className="bg-green-100 text-green-600 px-2 py-0.5 rounded text-xs font-semibold">
+              Public
+            </span>
+          ) : null}
         </div>
-        <div className="text-xs text-gray-600 line-clamp-3">{project.description}</div>
         <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-red-500 font-semibold flex items-center gap-1">
-            <span className="material-icons text-base">schedule</span>
+          <span className=" text-xs text-gray-500 flex items-center gap-1">
+            Last modified: &nbsp;
             {project.date}
           </span>
         </div>
+
+        <div className="text-xs text-gray-600 line-clamp-3">{project.description}</div>
+        
         <div className="flex items-center justify-between mt-1">
           <div className="flex -space-x-2">
             {project.members.slice(0, 3).map((member) => (
@@ -60,8 +69,8 @@ const ProjectsCardView: React.FC<Props> = ({ projects, onProjectClick }) => (
             )}
           </div>
           <div className="flex items-center gap-1 text-xs text-gray-500">
-            <span className="material-icons text-base">bug_report</span>
-            {project.issues} issues
+            <StickyNote className="w-4 h-4" />
+            {project.issues} task
           </div>
         </div>
       </div>

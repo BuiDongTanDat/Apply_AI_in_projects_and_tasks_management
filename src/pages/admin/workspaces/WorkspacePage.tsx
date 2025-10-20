@@ -4,8 +4,9 @@ import WorkspaceListView from "./components/WorkspaceListView";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Filter, Square, List, Search } from "lucide-react";
-import { myWorkspaces, otherWorkspaces } from "@/db/workspaces.mock";
+import { mockWorkspaces, otherWorkspaces } from "@/db/workspaces.mock";
 import AppPagination from "@/components/common/AppPagination";
+import { useNavigate } from "react-router-dom";
 
 const tabList = [
   { key: "my", label: "My Workspaces" },
@@ -17,13 +18,14 @@ const WorkspacesPage: React.FC = () => {
   const [view, setView] = useState<"card" | "list">("card");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const workspacesPerPage = 6;
+  const workspacesPerPage = 9;
+  const navigate = useNavigate();
 
   useEffect(() => setCurrentPage(1), [searchQuery, tab]);
 
   const filteredWorkspaces = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const data = tab === "my" ? myWorkspaces : otherWorkspaces;
+    const data = tab === "my" ? mockWorkspaces : otherWorkspaces;
     if (!q) return data;
     return data.filter((ws) =>
       ws.name.toLowerCase().includes(q)
@@ -38,9 +40,12 @@ const WorkspacesPage: React.FC = () => {
   const handleNext = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
   const handlePrev = () => setCurrentPage(prev => Math.max(prev - 1, 1));
   const handlePageChange = (page: number) => setCurrentPage(page);
+  const handleWorkspaceClick = (ws: any) => {
+    navigate(`/workspaces/${ws.id}`);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 px-0">
+    <div >
       {/* Sticky header container */}
       <div className="sticky top-[56px] z-10 bg-white shadow flex flex-col px-6 py-4 mb-0 w-full">
         {/* Hàng trên: title + search */}
@@ -116,11 +121,18 @@ const WorkspacesPage: React.FC = () => {
         </div>
       </div>
       {/* Scrollable content */}
-      <div className="px-2 md:px-6 pt-4 h-[calc(100vh-56px-88px)] overflow-y-auto">
+      <div className="px-2 md:px-6 pt-4">
         {view === "card" ? (
-          <WorkspaceCardView workspaces={currentWorkspaces} cardSize="sm" />
+          <WorkspaceCardView
+            workspaces={currentWorkspaces}
+            cardSize="sm"
+            onWorkspaceClick={handleWorkspaceClick}
+          />
         ) : (
-          <WorkspaceListView workspaces={currentWorkspaces} />
+          <WorkspaceListView
+            workspaces={currentWorkspaces}
+            onWorkspaceClick={handleWorkspaceClick}
+          />
         )}
         <AppPagination
           totalPages={totalPages}

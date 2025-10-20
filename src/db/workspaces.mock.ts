@@ -1,121 +1,198 @@
-// Dummy data cho workspace
-export const myWorkspaces = [
+import { mockUsers } from "./users.mock";
+import { mockTeams } from "./team.mock";
+import { mockProjects } from "./projects.mock";
+
+export const mockWorkspaces = [
   {
-    id: 1,
-    name: "Adoddle",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    date: "05 APRIL 2023",
+    id: "w1",
+    name: "Workspace Alpha",
+    imagePath: "",
+    description: "Workspace for Alpha projects",
+    invitationLink: "https://app.risefe.com/invite/w1",
+    teams: [mockTeams[0], mockTeams[1]],
+    users: [mockUsers[0], mockUsers[1], mockUsers[2]],
     members: [
-      { id: 1, avatar: "https://i.pravatar.cc/40?img=1" },
-      { id: 2, avatar: "https://i.pravatar.cc/40?img=2" },
-      { id: 3, avatar: "https://i.pravatar.cc/40?img=3" },
-      { id: 4, avatar: "https://i.pravatar.cc/40?img=4" },
-      { id: 5, avatar: "https://i.pravatar.cc/40?img=5" },
+      { id: mockUsers[0].id, avatar: mockUsers[0].avatarPath },
+      { id: mockUsers[1].id, avatar: mockUsers[1].avatarPath },
+      { id: mockUsers[2].id, avatar: mockUsers[2].avatarPath }
     ],
-    issues: 14,
-    private: true,
+    projects: [mockProjects[0], mockProjects[1]]
   },
   {
-    id: 2,
-    name: "Adoddle",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    date: "05 APRIL 2023",
+    id: "w2",
+    name: "Workspace Beta",
+    imagePath: "",
+    description: "Workspace for Beta team",
+    invitationLink: "https://app.risefe.com/invite/w2",
+    teams: [mockTeams[2]],
+    users: [mockUsers[2], mockUsers[3]],
     members: [
-      { id: 1, avatar: "https://i.pravatar.cc/40?img=1" },
-      { id: 2, avatar: "https://i.pravatar.cc/40?img=2" },
-      { id: 3, avatar: "https://i.pravatar.cc/40?img=3" },
-      { id: 4, avatar: "https://i.pravatar.cc/40?img=4" },
-      { id: 5, avatar: "https://i.pravatar.cc/40?img=5" },
+      { id: mockUsers[2].id, avatar: mockUsers[2].avatarPath },
+      { id: mockUsers[3].id, avatar: mockUsers[3].avatarPath }
     ],
-    issues: 14,
-    private: true,
+    projects: [mockProjects[2]]
   },
   {
-    id: 3,
-    name: "Adoddle",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    date: "05 APRIL 2023",
+    id: "w3",
+    name: "Workspace Gamma",
+    imagePath: "",
+    description: "Workspace for Gamma team",
+    invitationLink: "https://app.risefe.com/invite/w3",
+    teams: [mockTeams[3]],
+    users: [mockUsers[0], mockUsers[3]],
     members: [
-      { id: 1, avatar: "https://i.pravatar.cc/40?img=1" },
-      { id: 2, avatar: "https://i.pravatar.cc/40?img=2" },
-      { id: 3, avatar: "https://i.pravatar.cc/40?img=3" },
-      { id: 4, avatar: "https://i.pravatar.cc/40?img=4" },
-      { id: 5, avatar: "https://i.pravatar.cc/40?img=5" },
+      { id: mockUsers[0].id, avatar: mockUsers[0].avatarPath },
+      { id: mockUsers[3].id, avatar: mockUsers[3].avatarPath }
     ],
-    issues: 14,
-    private: true,
+    projects: [mockProjects[3], mockProjects[4]]
   },
   {
-    id: 4,
-    name: "Adoddle",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    date: "05 APRIL 2023",
+    id: "w4",
+    name: "Workspace Delta",
+    imagePath: "",
+    description: "Workspace for Delta team",
+    invitationLink: "https://app.risefe.com/invite/w4",
+    teams: [],
+    users: [mockUsers[1]],
     members: [
-      { id: 1, avatar: "https://i.pravatar.cc/40?img=1" },
-      { id: 2, avatar: "https://i.pravatar.cc/40?img=2" },
-      { id: 3, avatar: "https://i.pravatar.cc/40?img=3" },
-      { id: 4, avatar: "https://i.pravatar.cc/40?img=4" },
-      { id: 5, avatar: "https://i.pravatar.cc/40?img=5" },
+      { id: mockUsers[1].id, avatar: mockUsers[1].avatarPath }
     ],
-    issues: 14,
-    private: true,
+    projects: []
   },
   {
-    id: 5,
-    name: "Adoddle",
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    date: "05 APRIL 2023",
+    id: "w5",
+    name: "Workspace Delta",
+    imagePath: "",
+    description: "Workspace for Delta team",
+    invitationLink: "https://app.risefe.com/invite/w4",
+    teams: [],
+    users: [mockUsers[1]],
     members: [
-      { id: 1, avatar: "https://i.pravatar.cc/40?img=1" },
-      { id: 2, avatar: "https://i.pravatar.cc/40?img=2" },
-      { id: 3, avatar: "https://i.pravatar.cc/40?img=3" },
-      { id: 4, avatar: "https://i.pravatar.cc/40?img=4" },
-      { id: 5, avatar: "https://i.pravatar.cc/40?img=5" },
+      { id: mockUsers[1].id, avatar: mockUsers[1].avatarPath }
     ],
-    issues: 14,
-    private: true,
+    projects: []
   },
+  {
+    id: "w6",
+    name: "Workspace Delta",
+    imagePath: "",
+    description: "Workspace for Delta team",
+    invitationLink: "https://app.risefe.com/invite/w4",
+    teams: [],
+    users: [mockUsers[1]],
+    members: [
+      { id: mockUsers[1].id, avatar: mockUsers[1].avatarPath }
+    ],
+    projects: []
+  },
+  {
+    id: "w7",
+    name: "Workspace Delta",
+    imagePath: "",
+    description: "Workspace for Delta team",
+    invitationLink: "https://app.risefe.com/invite/w4",
+    teams: [],
+    users: [mockUsers[1]],
+    members: [
+      { id: mockUsers[1].id, avatar: mockUsers[1].avatarPath }
+    ],
+    projects: []
+  },
+  {
+    id: "w8",
+    name: "Workspace Delta",
+    imagePath: "",
+    description: "Workspace for Delta team",
+    invitationLink: "https://app.risefe.com/invite/w4",
+    teams: [],
+    users: [mockUsers[1]],
+    members: [
+      { id: mockUsers[1].id, avatar: mockUsers[1].avatarPath }
+    ],
+    projects: []
+  },
+  {
+    id: "w9",
+    name: "Workspace Delta",
+    imagePath: "",
+    description: "Workspace for Delta team",
+    invitationLink: "https://app.risefe.com/invite/w4",
+    teams: [],
+    users: [mockUsers[1]],
+    members: [
+      { id: mockUsers[1].id, avatar: mockUsers[1].avatarPath }
+    ],
+    projects: []
+  },
+  {
+    id: "w10",
+    name: "Workspace Delta",
+    imagePath: "",
+    description: "Workspace for Delta team",
+    invitationLink: "https://app.risefe.com/invite/w4",
+    teams: [],
+    users: [mockUsers[1]],
+    members: [
+      { id: mockUsers[1].id, avatar: mockUsers[1].avatarPath }
+    ],
+    projects: []
+  }
 ];
+
 export const otherWorkspaces = [
   {
-    id: 6,
-    name: "Other Workspace",
-    description: "Other workspace description...",
-    date: "10 MAY 2023",
+    id: "ow1",
+    name: "Other Workspace 1",
+    imagePath: "",
+    description: "Other workspace 1 description...",
+    invitationLink: "https://app.risefe.com/invite/ow1",
+    teams: [mockTeams[0]],
+    users: [mockUsers[1], mockUsers[2]],
     members: [
-      { id: 1, avatar: "https://i.pravatar.cc/40?img=6" },
-      { id: 2, avatar: "https://i.pravatar.cc/40?img=7" },
+      { id: mockUsers[1].id, avatar: mockUsers[1].avatarPath },
+      { id: mockUsers[2].id, avatar: mockUsers[2].avatarPath }
     ],
-    issues: 5,
-    private: false,
+    projects: [mockProjects[2]]
   },
   {
-    id: 7,
-    name: "Other Workspace",
-    description: "Other workspace description...",
-    date: "10 MAY 2023",
+    id: "ow2",
+    name: "Other Workspace 2",
+    imagePath: "",
+    description: "Other workspace 2 description...",
+    invitationLink: "https://app.risefe.com/invite/ow2",
+    teams: [mockTeams[1]],
+    users: [mockUsers[0], mockUsers[3]],
     members: [
-      { id: 1, avatar: "https://i.pravatar.cc/40?img=6" },
-      { id: 2, avatar: "https://i.pravatar.cc/40?img=7" },
+      { id: mockUsers[0].id, avatar: mockUsers[0].avatarPath },
+      { id: mockUsers[3].id, avatar: mockUsers[3].avatarPath }
     ],
-    issues: 5,
-    private: false,
+    projects: [mockProjects[3]]
   },
   {
-    id: 8,
-    name: "Other Workspace",
-    description: "Other workspace description...",
-    date: "10 MAY 2023",
+    id: "ow3",
+    name: "Other Workspace 3",
+    imagePath: "",
+    description: "Other workspace 3 description...",
+    invitationLink: "https://app.risefe.com/invite/ow3",
+    teams: [],
+    users: [mockUsers[2]],
     members: [
-      { id: 1, avatar: "https://i.pravatar.cc/40?img=6" },
-      { id: 2, avatar: "https://i.pravatar.cc/40?img=7" },
+      { id: mockUsers[2].id, avatar: mockUsers[2].avatarPath }
     ],
-    issues: 5,
-    private: false,
+    projects: []
   },
+  {
+    id: "ow4",
+    name: "Other Workspace 4",
+    imagePath: "",
+    description: "Other workspace 4 description...",
+    invitationLink: "https://app.risefe.com/invite/ow4",
+    teams: [mockTeams[2], mockTeams[3]],
+    users: [mockUsers[1], mockUsers[3]],
+    members: [
+      { id: mockUsers[1].id, avatar: mockUsers[1].avatarPath },
+      { id: mockUsers[3].id, avatar: mockUsers[3].avatarPath }
+    ],
+    projects: [mockProjects[4]]
+  }
 ];
