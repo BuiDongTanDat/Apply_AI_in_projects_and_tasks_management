@@ -1,0 +1,854 @@
+[
+  {
+    "id": 101,
+    "title": "Project Kickoff & Roadmap",
+    "description": "Given the project brief, when preparing kickoff materials, then create roadmap, milestones and initial backlog.",
+    "tags": [
+      "planning",
+      "kickoff",
+      "roadmap"
+    ],
+    "priority": "HIGH",
+    "assignee": {
+      "id": 1,
+      "email": "alice.manager@example.com",
+      "name": "Alice Nguyen",
+      "position": "MANAGER"
+    },
+    "status": "DONE",
+    "progress": 100,
+    "createdAt": "2024-01-05T09:00:00Z",
+    "updatedAt": "2024-01-12T15:20:00Z",
+    "subtasks": [
+      {
+        "id": 1011,
+        "title": "Define milestones and success metrics",
+        "description": "List milestones and measurable success criteria.",
+        "tags": [
+          "planning"
+        ],
+        "priority": "HIGH",
+        "assignee": {
+          "id": 1,
+          "email": "alice.manager@example.com",
+          "name": "Alice Nguyen",
+          "position": "MANAGER"
+        },
+        "status": "DONE",
+        "progress": 100,
+        "createdAt": "2024-01-05T09:00:00Z",
+        "updatedAt": "2024-01-07T10:00:00Z"
+      },
+      {
+        "id": 1012,
+        "title": "Prepare kickoff presentation",
+        "description": "Assemble slides and agenda for kickoff meeting.",
+        "tags": [
+          "documentation"
+        ],
+        "priority": "MEDIUM",
+        "assignee": {
+          "id": 8,
+          "email": "harry.designer@example.com",
+          "name": "Harry Nguyen",
+          "position": "DESIGNER"
+        },
+        "status": "DONE",
+        "progress": 100,
+        "createdAt": "2024-01-06T11:00:00Z",
+        "updatedAt": "2024-01-09T13:30:00Z"
+      }
+    ]
+  },
+  {
+    "id": 102,
+    "title": "Design Analytics Dashboard (Figma)",
+    "description": "Given analytics requirements, when designing UI, then provide wireframes and hi-fi screens with components and responsive behaviors.",
+    "tags": [
+      "design",
+      "ui",
+      "dashboard"
+    ],
+    "priority": "HIGH",
+    "assignee": {
+      "id": 8,
+      "email": "harry.designer@example.com",
+      "name": "Harry Nguyen",
+      "position": "DESIGNER"
+    },
+    "status": "IN_PROGRESS",
+    "progress": 60,
+    "createdAt": "2024-04-01T08:00:00Z",
+    "updatedAt": "2024-06-10T10:00:00Z",
+    "subtasks": [
+      {
+        "id": 1021,
+        "title": "Create wireframes for dashboard flows",
+        "description": "Low-fidelity wireframes covering key screens and flows.",
+        "tags": [
+          "design",
+          "wireframe"
+        ],
+        "priority": "HIGH",
+        "assignee": {
+          "id": 8,
+          "email": "harry.designer@example.com",
+          "name": "Harry Nguyen",
+          "position": "DESIGNER"
+        },
+        "status": "DONE",
+        "progress": 100,
+        "createdAt": "2024-04-01T08:00:00Z",
+        "updatedAt": "2024-05-01T12:00:00Z"
+      },
+      {
+        "id": 1022,
+        "title": "Design hi-fi screens and components",
+        "description": "High-fidelity mockups, component library and responsive variants.",
+        "tags": [
+          "design",
+          "components"
+        ],
+        "priority": "HIGH",
+        "assignee": {
+          "id": 8,
+          "email": "harry.designer@example.com",
+          "name": "Harry Nguyen",
+          "position": "DESIGNER"
+        },
+        "status": "IN_PROGRESS",
+        "progress": 50,
+        "createdAt": "2024-05-02T09:00:00Z",
+        "updatedAt": "2024-06-10T10:00:00Z"
+      },
+      {
+        "id": 1023,
+        "title": "Handoff to frontend",
+        "description": "Provide specs, tokens and assets for FE implementation.",
+        "tags": [
+          "handoff",
+          "assets"
+        ],
+        "priority": "MEDIUM",
+        "assignee": {
+          "id": 2,
+          "email": "bob.fe@example.com",
+          "name": "Bob Tran",
+          "position": "DEV_FE"
+        },
+        "status": "TODO",
+        "progress": 0,
+        "createdAt": "2024-06-10T10:00:00Z",
+        "updatedAt": "2024-06-10T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 103,
+    "title": "Implement Dashboard Frontend",
+    "description": "Given designs, when implementing, then build responsive React components and integrate charts and filters.",
+    "tags": [
+      "frontend",
+      "dashboard",
+      "charts"
+    ],
+    "priority": "HIGH",
+    "assignee": {
+      "id": 2,
+      "email": "bob.fe@example.com",
+      "name": "Bob Tran",
+      "position": "DEV_FE"
+    },
+    "status": "IN_PROGRESS",
+    "progress": 35,
+    "createdAt": "2024-05-10T09:30:00Z",
+    "updatedAt": "2024-06-12T09:00:00Z",
+    "subtasks": [
+      {
+        "id": 1031,
+        "title": "Set up base dashboard routes and layout",
+        "description": "Routes, layout shell, responsive grid.",
+        "tags": [
+          "frontend"
+        ],
+        "priority": "MEDIUM",
+        "assignee": {
+          "id": 2,
+          "email": "bob.fe@example.com",
+          "name": "Bob Tran",
+          "position": "DEV_FE"
+        },
+        "status": "DONE",
+        "progress": 100,
+        "createdAt": "2024-05-10T09:30:00Z",
+        "updatedAt": "2024-05-15T16:00:00Z"
+      },
+      {
+        "id": 1032,
+        "title": "Integrate charting library and sample charts",
+        "description": "Connect chart lib, sample data and responsive behavior.",
+        "tags": [
+          "frontend",
+          "charts"
+        ],
+        "priority": "HIGH",
+        "assignee": {
+          "id": 4,
+          "email": "dan.fullstack@example.com",
+          "name": "Dan Pham",
+          "position": "DEV_FULLSTACK"
+        },
+        "status": "IN_PROGRESS",
+        "progress": 40,
+        "createdAt": "2024-05-20T10:00:00Z",
+        "updatedAt": "2024-06-12T09:00:00Z"
+      },
+      {
+        "id": 1033,
+        "title": "Filters UI and state management",
+        "description": "Implement filters UI and connect with store.",
+        "tags": [
+          "frontend",
+          "state"
+        ],
+        "priority": "MEDIUM",
+        "assignee": {
+          "id": 2,
+          "email": "bob.fe@example.com",
+          "name": "Bob Tran",
+          "position": "DEV_FE"
+        },
+        "status": "IN_PROGRESS",
+        "progress": 20,
+        "createdAt": "2024-06-01T08:00:00Z",
+        "updatedAt": "2024-06-12T09:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 104,
+    "title": "Backend APIs for Dashboard",
+    "description": "Given data models, when implementing APIs, then provide endpoints for metrics, filters and pagination.",
+    "tags": [
+      "backend",
+      "api"
+    ],
+    "priority": "HIGH",
+    "assignee": {
+      "id": 3,
+      "email": "carol.be@example.com",
+      "name": "Carol Le",
+      "position": "DEV_BE"
+    },
+    "status": "IN_PROGRESS",
+    "progress": 55,
+    "createdAt": "2024-04-15T10:00:00Z",
+    "updatedAt": "2024-06-11T14:00:00Z",
+    "subtasks": [
+      {
+        "id": 1041,
+        "title": "Design metrics endpoints and pagination",
+        "description": "Schema, query params and pagination contract.",
+        "tags": [
+          "backend",
+          "design"
+        ],
+        "priority": "HIGH",
+        "assignee": {
+          "id": 3,
+          "email": "carol.be@example.com",
+          "name": "Carol Le",
+          "position": "DEV_BE"
+        },
+        "status": "DONE",
+        "progress": 100,
+        "createdAt": "2024-04-15T10:00:00Z",
+        "updatedAt": "2024-05-05T09:00:00Z"
+      },
+      {
+        "id": 1042,
+        "title": "Implement aggregation and caching",
+        "description": "Aggregation queries and Redis caching for heavy queries.",
+        "tags": [
+          "backend",
+          "performance"
+        ],
+        "priority": "HIGH",
+        "assignee": {
+          "id": 6,
+          "email": "frank.ops@example.com",
+          "name": "Frank Vo",
+          "position": "DEV_OPS"
+        },
+        "status": "IN_PROGRESS",
+        "progress": 60,
+        "createdAt": "2024-05-06T08:00:00Z",
+        "updatedAt": "2024-06-11T14:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 105,
+    "title": "Mobile Adaptive Views",
+    "description": "Given designs, when implementing mobile views, then ensure charts and lists are usable on phones.",
+    "tags": [
+      "mobile",
+      "responsive"
+    ],
+    "priority": "MEDIUM",
+    "assignee": {
+      "id": 5,
+      "email": "eva.mobile@example.com",
+      "name": "Eva Ho",
+      "position": "DEV_MOBILE"
+    },
+    "status": "TODO",
+    "progress": 0,
+    "createdAt": "2024-06-01T09:00:00Z",
+    "updatedAt": "2024-06-01T09:00:00Z",
+    "subtasks": [
+      {
+        "id": 1051,
+        "title": "Create mobile layout for key screens",
+        "description": "Adapt main dashboard screens for small viewports.",
+        "tags": [
+          "mobile"
+        ],
+        "priority": "MEDIUM",
+        "assignee": {
+          "id": 5,
+          "email": "eva.mobile@example.com",
+          "name": "Eva Ho",
+          "position": "DEV_MOBILE"
+        },
+        "status": "TODO",
+        "progress": 0,
+        "createdAt": "2024-06-01T09:00:00Z",
+        "updatedAt": "2024-06-01T09:00:00Z"
+      },
+      {
+        "id": 1052,
+        "title": "Optimize chart interactions on touch",
+        "description": "Ensure gestures and tooltips work well on mobile.",
+        "tags": [
+          "mobile",
+          "charts"
+        ],
+        "priority": "LOW",
+        "assignee": {
+          "id": 5,
+          "email": "eva.mobile@example.com",
+          "name": "Eva Ho",
+          "position": "DEV_MOBILE"
+        },
+        "status": "TODO",
+        "progress": 0,
+        "createdAt": "2024-06-01T09:00:00Z",
+        "updatedAt": "2024-06-01T09:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 106,
+    "title": "E2E Tests for Dashboard Flows",
+    "description": "Given implemented features, when writing tests, then cover critical flows with end-to-end tests.",
+    "tags": [
+      "testing",
+      "e2e"
+    ],
+    "priority": "MEDIUM",
+    "assignee": {
+      "id": 7,
+      "email": "gina.tester@example.com",
+      "name": "Gina Do",
+      "position": "TESTER"
+    },
+    "status": "IN_PROGRESS",
+    "progress": 30,
+    "createdAt": "2024-05-25T10:00:00Z",
+    "updatedAt": "2024-06-15T08:00:00Z",
+    "subtasks": [
+      {
+        "id": 1061,
+        "title": "Test login and auth flows",
+        "description": "Ensure auth flows and permissions work as expected.",
+        "tags": [
+          "e2e",
+          "auth"
+        ],
+        "priority": "HIGH",
+        "assignee": {
+          "id": 7,
+          "email": "gina.tester@example.com",
+          "name": "Gina Do",
+          "position": "TESTER"
+        },
+        "status": "DONE",
+        "progress": 100,
+        "createdAt": "2024-05-25T10:00:00Z",
+        "updatedAt": "2024-05-28T11:00:00Z"
+      },
+      {
+        "id": 1062,
+        "title": "Test dashboard data loading and filters",
+        "description": "E2E scenarios covering filters, pagination and chart updates.",
+        "tags": [
+          "e2e",
+          "dashboard"
+        ],
+        "priority": "MEDIUM",
+        "assignee": {
+          "id": 7,
+          "email": "gina.tester@example.com",
+          "name": "Gina Do",
+          "position": "TESTER"
+        },
+        "status": "IN_PROGRESS",
+        "progress": 20,
+        "createdAt": "2024-06-01T09:00:00Z",
+        "updatedAt": "2024-06-15T08:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 107,
+    "title": "Business Requirements: Metrics Definition",
+    "description": "Given stakeholder interviews, when capturing requirements, then define metrics, dimensions and SLAs.",
+    "tags": [
+      "ba",
+      "requirements"
+    ],
+    "priority": "HIGH",
+    "assignee": {
+      "id": 9,
+      "email": "ivy.ba@example.com",
+      "name": "Ivy Tran",
+      "position": "BUSINESS_ANALYST"
+    },
+    "status": "DONE",
+    "progress": 100,
+    "createdAt": "2024-03-18T09:00:00Z",
+    "updatedAt": "2024-04-01T12:00:00Z",
+    "subtasks": [
+      {
+        "id": 1071,
+        "title": "Interview stakeholders and capture KPIs",
+        "description": "Collect KPIs from product, sales and ops.",
+        "tags": [
+          "ba"
+        ],
+        "priority": "HIGH",
+        "assignee": {
+          "id": 9,
+          "email": "ivy.ba@example.com",
+          "name": "Ivy Tran",
+          "position": "BUSINESS_ANALYST"
+        },
+        "status": "DONE",
+        "progress": 100,
+        "createdAt": "2024-03-18T09:00:00Z",
+        "updatedAt": "2024-03-22T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 108,
+    "title": "CI/CD Pipeline for Dashboard",
+    "description": "Given repo and infra, when configuring CI/CD, then provide automated builds, tests and deployments.",
+    "tags": [
+      "devops",
+      "ci/cd"
+    ],
+    "priority": "MEDIUM",
+    "assignee": {
+      "id": 6,
+      "email": "frank.ops@example.com",
+      "name": "Frank Vo",
+      "position": "DEV_OPS"
+    },
+    "status": "IN_PROGRESS",
+    "progress": 70,
+    "createdAt": "2024-02-20T08:30:00Z",
+    "updatedAt": "2024-06-10T16:00:00Z",
+    "subtasks": [
+      {
+        "id": 1081,
+        "title": "Set up build and test jobs",
+        "description": "CI jobs for build, lint, unit and e2e tests.",
+        "tags": [
+          "ci"
+        ],
+        "priority": "HIGH",
+        "assignee": {
+          "id": 6,
+          "email": "frank.ops@example.com",
+          "name": "Frank Vo",
+          "position": "DEV_OPS"
+        },
+        "status": "DONE",
+        "progress": 100,
+        "createdAt": "2024-02-20T08:30:00Z",
+        "updatedAt": "2024-03-05T14:00:00Z"
+      },
+      {
+        "id": 1082,
+        "title": "Automate staging deploys",
+        "description": "Deploy to staging on merge and run smoke tests.",
+        "tags": [
+          "cd"
+        ],
+        "priority": "MEDIUM",
+        "assignee": {
+          "id": 6,
+          "email": "frank.ops@example.com",
+          "name": "Frank Vo",
+          "position": "DEV_OPS"
+        },
+        "status": "IN_PROGRESS",
+        "progress": 60,
+        "createdAt": "2024-04-01T09:00:00Z",
+        "updatedAt": "2024-06-10T16:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 109,
+    "title": "Accessibility Audit & Fixes",
+    "description": "Given current UI, when auditing accessibility, then fix issues to meet AA standards.",
+    "tags": [
+      "a11y",
+      "audit"
+    ],
+    "priority": "LOW",
+    "assignee": {
+      "id": 4,
+      "email": "dan.fullstack@example.com",
+      "name": "Dan Pham",
+      "position": "DEV_FULLSTACK"
+    },
+    "status": "TODO",
+    "progress": 0,
+    "createdAt": "2024-06-12T09:00:00Z",
+    "updatedAt": "2024-06-12T09:00:00Z",
+    "subtasks": [
+      {
+        "id": 1091,
+        "title": "Run automated accessibility scans",
+        "description": "Use tools to discover common a11y issues.",
+        "tags": [
+          "a11y",
+          "testing"
+        ],
+        "priority": "LOW",
+        "assignee": {
+          "id": 4,
+          "email": "dan.fullstack@example.com",
+          "name": "Dan Pham",
+          "position": "DEV_FULLSTACK"
+        },
+        "status": "TODO",
+        "progress": 0,
+        "createdAt": "2024-06-12T09:00:00Z",
+        "updatedAt": "2024-06-12T09:00:00Z"
+      }
+    ]
+  },
+  {
+    "id": 110,
+    "title": "Ensure User Proficiency in Figma",
+    "description": "Given a user is expected to contribute to design projects or collaborate with design teams, when their knowledge and practical skills in Figma are assessed or developed, then the user demonstrates sufficient understanding and capability to effectively use Figma for project requirements, from basic design to collaboration and handoff.",
+    "tags": [
+      "Figma",
+      "Skill Assessment",
+      "Design Tool",
+      "Onboarding",
+      "Proficiency"
+    ],
+    "priority": "HIGH",
+    "assignee": {
+      "id": 9,
+      "email": "ivy.ba@example.com",
+      "name": "Ivy Tran",
+      "position": "BUSINESS_ANALYST"
+    },
+    "status": "TODO",
+    "progress": 0,
+    "createdAt": "2025-10-27T08:00:48.717928Z",
+    "updatedAt": "2025-10-27T08:00:48.717928Z",
+    "subtasks": [
+      {
+        "title": "Understand Figma Core Concepts and Interface",
+        "description": "The user must grasp the fundamental principles of Figma and navigate its user interface efficiently to begin any design task.",
+        "tags": [
+          "Figma Basics",
+          "Interface",
+          "Concepts",
+          "Navigation"
+        ],
+        "priority": "HIGH",
+        "subtasks": [
+          {
+            "title": "Identify and Navigate Figma UI Elements",
+            "description": "Given a Figma file, the user can identify and explain the purpose of the toolbar, layers panel, properties panel, and canvas, and efficiently navigate between them.",
+            "tags": [
+              "UI Navigation",
+              "Figma Layout",
+              "Workspace"
+            ],
+            "priority": "HIGH"
+          },
+          {
+            "title": "Differentiate Between Frames, Groups, and Components",
+            "description": "Given various design elements, the user can correctly apply and explain the use cases for frames, groups, and components, understanding their hierarchical relationships and benefits for organization.",
+            "tags": [
+              "Frames",
+              "Components",
+              "Groups",
+              "Structure",
+              "Organization"
+            ],
+            "priority": "HIGH"
+          },
+          {
+            "title": "Understand Version History and File Management",
+            "description": "Given a project, the user can access and restore previous versions of a file, create new versions, and manage file organization within Figma projects.",
+            "tags": [
+              "Version Control",
+              "File Management",
+              "History"
+            ],
+            "priority": "MEDIUM"
+          }
+        ]
+      },
+      {
+        "title": "Master Figma Design and Prototyping Tools",
+        "description": "The user must be able to practically apply Figma's design and prototyping features to create and iterate on user interfaces and experiences.",
+        "tags": [
+          "Design",
+          "Prototyping",
+          "Tools",
+          "Hands-on",
+          "Creation"
+        ],
+        "priority": "HIGH",
+        "subtasks": [
+          {
+            "title": "Create and Manipulate Basic Shapes and Text",
+            "description": "Given a design brief, the user can effectively use shape tools, pen tool, and text tool to create and edit visual elements, applying basic styling such as colors, strokes, and effects.",
+            "tags": [
+              "Shapes",
+              "Text",
+              "Styling",
+              "Basic Design",
+              "Vector"
+            ],
+            "priority": "HIGH"
+          },
+          {
+            "title": "Apply Constraints, Auto Layout, and Variants",
+            "description": "Given a responsive design requirement, the user can implement constraints, auto layout, and create component variants to ensure adaptability, reusability, and maintainability of design systems.",
+            "tags": [
+              "Constraints",
+              "Auto Layout",
+              "Variants",
+              "Responsive Design",
+              "Design System"
+            ],
+            "priority": "HIGH"
+          },
+          {
+            "title": "Build Interactive Prototypes with Flows",
+            "description": "Given a set of screens, the user can connect them with interactive flows, add animations, and present a functional prototype that simulates user interactions.",
+            "tags": [
+              "Prototyping",
+              "Interactions",
+              "Animations",
+              "User Flows",
+              "Usability Testing"
+            ],
+            "priority": "HIGH"
+          }
+        ]
+      },
+      {
+        "title": "Utilize Figma for Collaboration and Handoff",
+        "description": "The user must effectively use Figma's collaborative features and prepare designs for seamless handoff to development teams.",
+        "tags": [
+          "Collaboration",
+          "Handoff",
+          "Sharing",
+          "Teamwork",
+          "Communication"
+        ],
+        "priority": "MEDIUM",
+        "subtasks": [
+          {
+            "title": "Share Files and Manage Permissions",
+            "description": "Given a design project, the user can share files with appropriate access levels (view, edit, comment) and understand best practices for secure and efficient sharing.",
+            "tags": [
+              "Sharing",
+              "Permissions",
+              "Access Control",
+              "Security"
+            ],
+            "priority": "MEDIUM"
+          },
+          {
+            "title": "Use Comments and Annotations for Feedback",
+            "description": "Given a design iteration, the user can effectively use Figma's commenting features to provide and receive feedback, resolve comments, and track design discussions.",
+            "tags": [
+              "Feedback",
+              "Comments",
+              "Annotations",
+              "Review"
+            ],
+            "priority": "MEDIUM"
+          },
+          {
+            "title": "Prepare Designs for Developer Handoff",
+            "description": "Given a finalized design, the user can prepare it for developer handoff by organizing layers, using inspect mode to provide specifications, and exporting assets in various formats.",
+            "tags": [
+              "Handoff",
+              "Developer",
+              "Export Assets",
+              "Inspect Mode",
+              "Specifications"
+            ],
+            "priority": "HIGH"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 221180,
+    "title": "Am hiểu và sử dụng thành thạo Figma",
+    "description": "Given một dự án thiết kế giao diện người dùng (UI/UX) hoặc sản phẩm số cần triển khai, When người thực hiện nhiệm vụ được giao trách nhiệm thiết kế, phát triển hoặc duy trì các tài liệu thiết kế, Then người đó có thể sử dụng Figma một cách hiệu quả để tạo ra các thiết kế chất lượng cao, cộng tác tốt với đội nhóm và quản lý hệ thống thiết kế.",
+    "tags": [
+      "Figma",
+      "UI/UX Design",
+      "Thiết kế giao diện",
+      "Công cụ thiết kế"
+    ],
+    "priority": "HIGH",
+    "assignee": {
+      "id": 8,
+      "email": "harry.designer@example.com",
+      "name": "Harry Nguyen",
+      "position": "DESIGNER"
+    },
+    "status": "TODO",
+    "progress": 0,
+    "createdAt": "2025-10-27T08:07:00.980633Z",
+    "updatedAt": "2025-10-27T08:07:00.980633Z",
+    "subtasks": [
+      {
+        "title": "Nắm vững các tính năng cơ bản và nâng cao của Figma",
+        "description": "Đảm bảo người dùng nắm vững từ các công cụ vẽ cơ bản đến các tính năng phức tạp như Auto Layout, Variants, Components để tối ưu hóa quy trình thiết kế.",
+        "tags": [
+          "Figma",
+          "Tính năng Figma",
+          "Kiến thức cơ bản",
+          "Kiến thức nâng cao"
+        ],
+        "priority": "HIGH",
+        "subtasks": [
+          {
+            "title": "Thành thạo công cụ vẽ và chỉnh sửa cơ bản",
+            "description": "Có khả năng tạo và chỉnh sửa các hình dạng, văn bản, hình ảnh, sử dụng các công cụ Pen, Pencil, Boolean operations một cách chính xác và nhanh chóng.",
+            "tags": [
+              "Công cụ vẽ",
+              "Chỉnh sửa",
+              "Figma cơ bản"
+            ],
+            "priority": "MEDIUM"
+          },
+          {
+            "title": "Sử dụng hiệu quả các tính năng nâng cao",
+            "description": "Áp dụng thành thạo Auto Layout để tạo bố cục linh hoạt, xây dựng và quản lý thư viện Components, và sử dụng Variants để quản lý các trạng thái UI khác nhau một cách có hệ thống.",
+            "tags": [
+              "Auto Layout",
+              "Components",
+              "Variants",
+              "Figma nâng cao",
+              "Hệ thống thiết kế"
+            ],
+            "priority": "HIGH"
+          }
+        ]
+      },
+      {
+        "title": "Ứng dụng Figma vào quy trình thiết kế thực tế",
+        "description": "Khả năng sử dụng Figma để thực hiện toàn bộ quy trình thiết kế từ giai đoạn nghiên cứu, phác thảo (wireframe) đến tạo prototype tương tác và bàn giao cho phát triển.",
+        "tags": [
+          "Quy trình thiết kế",
+          "UI/UX",
+          "Wireframe",
+          "Prototype",
+          "Thiết kế sản phẩm"
+        ],
+        "priority": "HIGH",
+        "subtasks": [
+          {
+            "title": "Thiết kế Wireframe và Mockup chi tiết",
+            "description": "Tạo ra các bản phác thảo cấu trúc (wireframe) và thiết kế giao diện chi tiết (mockup) dựa trên yêu cầu dự án và nguyên tắc UI/UX, đảm bảo tính thẩm mỹ và khả năng sử dụng.",
+            "tags": [
+              "Wireframe",
+              "Mockup",
+              "Thiết kế giao diện"
+            ],
+            "priority": "HIGH"
+          },
+          {
+            "title": "Xây dựng Prototype tương tác và kiểm thử",
+            "description": "Tạo các prototype có tính tương tác cao để mô phỏng trải nghiệm người dùng, kiểm thử luồng người dùng và thu thập phản hồi trước khi phát triển.",
+            "tags": [
+              "Prototype",
+              "Tương tác",
+              "Kiểm thử UX",
+              "User Flow"
+            ],
+            "priority": "HIGH"
+          }
+        ]
+      },
+      {
+        "title": "Cộng tác và quản lý tài nguyên thiết kế trên Figma",
+        "description": "Khả năng làm việc nhóm hiệu quả trên Figma, quản lý phiên bản, duy trì hệ thống thiết kế và bàn giao tài nguyên cho đội ngũ phát triển.",
+        "tags": [
+          "Cộng tác",
+          "Quản lý tài nguyên",
+          "Design System",
+          "Phiên bản",
+          "Bàn giao"
+        ],
+        "priority": "MEDIUM",
+        "subtasks": [
+          {
+            "title": "Cộng tác hiệu quả với đội nhóm và các bên liên quan",
+            "description": "Chia sẻ file, nhận và đưa ra phản hồi thông qua comment, làm việc đồng thời với các thành viên khác trong dự án, và quản lý quyền truy cập file.",
+            "tags": [
+              "Cộng tác nhóm",
+              "Phản hồi",
+              "Làm việc nhóm"
+            ],
+            "priority": "MEDIUM"
+          },
+          {
+            "title": "Quản lý Design System và bàn giao cho phát triển",
+            "description": "Xây dựng, duy trì và sử dụng hiệu quả các Design System, thư viện Components và Styles để đảm bảo tính nhất quán. Bàn giao tài nguyên thiết kế (specs, assets) cho đội ngũ phát triển một cách rõ ràng và đầy đủ.",
+            "tags": [
+              "Design System",
+              "Thư viện Components",
+              "Quản lý Styles",
+              "Bàn giao Dev"
+            ],
+            "priority": "HIGH"
+          }
+        ]
+      }
+    ],
+    "assignmentReason": "Harry Nguyen is the most suitable assignee due to a direct position match as a DESIGNER, which aligns perfectly with the Figma/UI/UX design task. He has a reasonable current load of 2 active tasks, has completed 2 tasks, and has 5 years of experience. His existing tasks include 'Design Analytics Dashboard (Figma)' which demonstrates direct competence with Figma."
+  }
+]

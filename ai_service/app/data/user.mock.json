@@ -1,0 +1,101 @@
+[
+  {
+    "id": 1,
+    "email": "alice.manager@example.com",
+    "password": "password123",
+    "name": "Alice Nguyen",
+    "avatar": "https://example.com/avatars/alice.jpg",
+    "position": "MANAGER",
+    "yearOfExperience": 8,
+    "createdAt": "2024-01-10T08:30:00Z",
+    "updatedAt": "2024-06-01T12:00:00Z"
+  },
+  {
+    "id": 2,
+    "email": "bob.fe@example.com",
+    "password": "password123",
+    "name": "Bob Tran",
+    "avatar": "https://example.com/avatars/bob.jpg",
+    "position": "DEV_FE",
+    "yearOfExperience": 4,
+    "createdAt": "2024-02-15T09:00:00Z",
+    "updatedAt": "2024-06-10T11:15:00Z"
+  },
+  {
+    "id": 3,
+    "email": "carol.be@example.com",
+    "password": "password123",
+    "name": "Carol Le",
+    "avatar": "https://example.com/avatars/carol.jpg",
+    "position": "DEV_BE",
+    "yearOfExperience": 5,
+    "createdAt": "2024-03-01T10:20:00Z",
+    "updatedAt": "2024-06-12T14:05:00Z"
+  },
+  {
+    "id": 4,
+    "email": "dan.fullstack@example.com",
+    "password": "password123",
+    "name": "Dan Pham",
+    "avatar": "https://example.com/avatars/dan.jpg",
+    "position": "DEV_FULLSTACK",
+    "yearOfExperience": 6,
+    "createdAt": "2024-01-25T07:45:00Z",
+    "updatedAt": "2024-06-05T09:30:00Z"
+  },
+  {
+    "id": 5,
+    "email": "eva.mobile@example.com",
+    "password": "password123",
+    "name": "Eva Ho",
+    "avatar": "https://example.com/avatars/eva.jpg",
+    "position": "DEV_MOBILE",
+    "yearOfExperience": 3,
+    "createdAt": "2024-04-02T13:10:00Z",
+    "updatedAt": "2024-06-14T16:00:00Z"
+  },
+  {
+    "id": 6,
+    "email": "frank.ops@example.com",
+    "password": "password123",
+    "name": "Frank Vo",
+    "avatar": "https://example.com/avatars/frank.jpg",
+    "position": "DEV_OPS",
+    "yearOfExperience": 7,
+    "createdAt": "2023-12-20T06:00:00Z",
+    "updatedAt": "2024-05-20T10:10:00Z"
+  },
+  {
+    "id": 7,
+    "email": "gina.tester@example.com",
+    "password": "password123",
+    "name": "Gina Do",
+    "avatar": "https://example.com/avatars/gina.jpg",
+    "position": "TESTER",
+    "yearOfExperience": 2,
+    "createdAt": "2024-05-01T15:25:00Z",
+    "updatedAt": "2024-06-18T08:45:00Z"
+  },
+  {
+    "id": 8,
+    "email": "harry.designer@example.com",
+    "password": "password123",
+    "name": "Harry Nguyen",
+    "avatar": "https://example.com/avatars/harry.jpg",
+    "position": "DESIGNER",
+    "yearOfExperience": 5,
+    "createdAt": "2024-02-10T11:11:00Z",
+    "updatedAt": "2024-06-02T13:22:00Z"
+  },
+  {
+    "id": 9,
+    "email": "ivy.ba@example.com",
+    "password": "password123",
+    "name": "Ivy Tran",
+    "avatar": "https://example.com/avatars/ivy.jpg",
+    "position": "BUSINESS_ANALYST",
+    "yearOfExperience": 4,
+    "createdAt": "2024-03-20T09:40:00Z",
+    "updatedAt": "2024-06-08T12:12:00Z"
+  }
+]

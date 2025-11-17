@@ -1,0 +1,252 @@
+[
+  {
+    "id": 1,
+    "email": "user1@example.com",
+    "password": "password123",
+    "name": "User 1",
+    "avatar": "https://example.com/avatars/1.jpg",
+    "position": "DEV_BE",
+    "yearOfExperience": 5,
+    "createdAt": "2025-11-11T12:29:29.973960"
+  },
+  {
+    "id": 2,
+    "email": "user2@example.com",
+    "password": "password123",
+    "name": "User 2",
+    "avatar": "https://example.com/avatars/2.jpg",
+    "position": "BUSINESS_ANALYST",
+    "yearOfExperience": 3,
+    "createdAt": "2025-11-11T12:29:29.973970"
+  },
+  {
+    "id": 3,
+    "email": "user3@example.com",
+    "password": "password123",
+    "name": "User 3",
+    "avatar": "https://example.com/avatars/3.jpg",
+    "position": "MANAGER",
+    "yearOfExperience": 1,
+    "createdAt": "2025-11-11T12:29:29.973975"
+  },
+  {
+    "id": 4,
+    "email": "user4@example.com",
+    "password": "password123",
+    "name": "User 4",
+    "avatar": "https://example.com/avatars/4.jpg",
+    "position": "DEV_BE",
+    "yearOfExperience": 5,
+    "createdAt": "2025-11-11T12:29:29.973978"
+  },
+  {
+    "id": 5,
+    "email": "user5@example.com",
+    "password": "password123",
+    "name": "User 5",
+    "avatar": "https://example.com/avatars/5.jpg",
+    "position": "MANAGER",
+    "yearOfExperience": 5,
+    "createdAt": "2025-11-11T12:29:29.973981"
+  },
+  {
+    "id": 6,
+    "email": "user6@example.com",
+    "password": "password123",
+    "name": "User 6",
+    "avatar": "https://example.com/avatars/6.jpg",
+    "position": "TESTER",
+    "yearOfExperience": 9,
+    "createdAt": "2025-11-11T12:29:29.973985"
+  },
+  {
+    "id": 7,
+    "email": "user7@example.com",
+    "password": "password123",
+    "name": "User 7",
+    "avatar": "https://example.com/avatars/7.jpg",
+    "position": "DEV_MOBILE",
+    "yearOfExperience": 7,
+    "createdAt": "2025-11-11T12:29:29.973988"
+  },
+  {
+    "id": 8,
+    "email": "user8@example.com",
+    "password": "password123",
+    "name": "User 8",
+    "avatar": "https://example.com/avatars/8.jpg",
+    "position": "DEV_OPS",
+    "yearOfExperience": 7,
+    "createdAt": "2025-11-11T12:29:29.973995"
+  },
+  {
+    "id": 9,
+    "email": "user9@example.com",
+    "password": "password123",
+    "name": "User 9",
+    "avatar": "https://example.com/avatars/9.jpg",
+    "position": "DESIGNER",
+    "yearOfExperience": 7,
+    "createdAt": "2025-11-11T12:29:29.973998"
+  },
+  {
+    "id": 10,
+    "email": "user10@example.com",
+    "password": "password123",
+    "name": "User 10",
+    "avatar": "https://example.com/avatars/10.jpg",
+    "position": "DEV_FULLSTACK",
+    "yearOfExperience": 2,
+    "createdAt": "2025-11-11T12:29:29.974001"
+  },
+  {
+    "id": 11,
+    "email": "user11@example.com",
+    "password": "password123",
+    "name": "User 11",
+    "avatar": "https://example.com/avatars/11.jpg",
+    "position": "DESIGNER",
+    "yearOfExperience": 8,
+    "createdAt": "2025-11-11T12:29:29.974004"
+  },
+  {
+    "id": 12,
+    "email": "user12@example.com",
+    "password": "password123",
+    "name": "User 12",
+    "avatar": "https://example.com/avatars/12.jpg",
+    "position": "DEV_OPS",
+    "yearOfExperience": 2,
+    "createdAt": "2025-11-11T12:29:29.974007"
+  },
+  {
+    "id": 13,
+    "email": "user13@example.com",
+    "password": "password123",
+    "name": "User 13",
+    "avatar": "https://example.com/avatars/13.jpg",
+    "position": "BUSINESS_ANALYST",
+    "yearOfExperience": 2,
+    "createdAt": "2025-11-11T12:29:29.974009"
+  },
+  {
+    "id": 14,
+    "email": "user14@example.com",
+    "password": "password123",
+    "name": "User 14",
+    "avatar": "https://example.com/avatars/14.jpg",
+    "position": "DEV_FULLSTACK",
+    "yearOfExperience": 1,
+    "createdAt": "2025-11-11T12:29:29.974011"
+  },
+  {
+    "id": 15,
+    "email": "user15@example.com",
+    "password": "password123",
+    "name": "User 15",
+    "avatar": "https://example.com/avatars/15.jpg",
+    "position": "DESIGNER",
+    "yearOfExperience": 4,
+    "createdAt": "2025-11-11T12:29:29.974014"
+  },
+  {
+    "id": 16,
+    "email": "user16@example.com",
+    "password": "password123",
+    "name": "User 16",
+    "avatar": "https://example.com/avatars/16.jpg",
+    "position": "MANAGER",
+    "yearOfExperience": 1,
+    "createdAt": "2025-11-11T12:29:29.974016"
+  },
+  {
+    "id": 17,
+    "email": "user17@example.com",
+    "password": "password123",
+    "name": "User 17",
+    "avatar": "https://example.com/avatars/17.jpg",
+    "position": "DEV_FULLSTACK",
+    "yearOfExperience": 10,
+    "createdAt": "2025-11-11T12:29:29.974018"
+  },
+  {
+    "id": 18,
+    "email": "user18@example.com",
+    "password": "password123",
+    "name": "User 18",
+    "avatar": "https://example.com/avatars/18.jpg",
+    "position": "DEV_BE",
+    "yearOfExperience": 3,
+    "createdAt": "2025-11-11T12:29:29.974024"
+  },
+  {
+    "id": 19,
+    "email": "user19@example.com",
+    "password": "password123",
+    "name": "User 19",
+    "avatar": "https://example.com/avatars/19.jpg",
+    "position": "TESTER",
+    "yearOfExperience": 8,
+    "createdAt": "2025-11-11T12:29:29.974026"
+  },
+  {
+    "id": 20,
+    "email": "user20@example.com",
+    "password": "password123",
+    "name": "User 20",
+    "avatar": "https://example.com/avatars/20.jpg",
+    "position": "DEV_FULLSTACK",
+    "yearOfExperience": 4,
+    "createdAt": "2025-11-11T12:29:29.974031"
+  },
+  {
+    "id": 21,
+    "email": "user21@example.com",
+    "password": "password123",
+    "name": "User 21",
+    "avatar": "https://example.com/avatars/21.jpg",
+    "position": "DEV_OPS",
+    "yearOfExperience": 2,
+    "createdAt": "2025-11-11T12:29:29.974036"
+  },
+  {
+    "id": 22,
+    "email": "user22@example.com",
+    "password": "password123",
+    "name": "User 22",
+    "avatar": "https://example.com/avatars/22.jpg",
+    "position": "BUSINESS_ANALYST",
+    "yearOfExperience": 3,
+    "createdAt": "2025-11-11T12:29:29.974038"
+  },
+  {
+    "id": 23,
+    "email": "user23@example.com",
+    "password": "password123",
+    "name": "User 23",
+    "avatar": "https://example.com/avatars/23.jpg",
+    "position": "DEV_OPS",
+    "yearOfExperience": 3,
+    "createdAt": "2025-11-11T12:29:29.974040"
+  },
+  {
+    "id": 24,
+    "email": "user24@example.com",
+    "password": "password123",
+    "name": "User 24",
+    "avatar": "https://example.com/avatars/24.jpg",
+    "position": "DEV_FULLSTACK",
+    "yearOfExperience": 10,
+    "createdAt": "2025-11-11T12:29:29.974043"
+  },
+  {
+    "id": 25,
+    "email": "user25@example.com",
+    "password": "password123",
+    "name": "User 25",
+    "avatar": "https://example.com/avatars/25.jpg",
+    "position": "DEV_MOBILE",
+    "yearOfExperience": 3,
+    "createdAt": "2025-11-11T12:29:29.974045"
+  }
+]
