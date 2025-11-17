@@ -2,29 +2,81 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 
 
-# Compose input
-class ComposeIn(BaseModel):
-    userInput: str
-    lang: Optional[str] = None
-    use_llm: Optional[bool] = True
+#Request body
+class ComposeRequest(BaseModel):
+    user_input: Optional[str] = Field("", alias="userInput")
+    project_id: Optional[str] = Field(None, alias="projectId")
+    class Config:
+        allow_population_by_field_name = True
+        extra = "allow"
 
-# Assign input
-class AssignIn(BaseModel):
-    task: Dict[str, Any]
-    requirement_text: Optional[str] = ""
+class AssignRequest(BaseModel):
+    task: Dict = Field(default_factory=dict)
+    requirement_text: Optional[str] = Field("", alias="requirement")
+    project_id: Optional[str] = Field(None, alias="projectId")
+    class Config:
+        allow_population_by_field_name = True
+        extra = "allow"
 
-# Duplicate input
-class DuplicateIn(BaseModel):
-    task: Dict[str, Any]
+class DuplicateRequest(BaseModel):
+    task: Dict = Field(default_factory=dict)
+    project_id: Optional[str] = Field(None, alias="projectId")
+    class Config:
+        allow_population_by_field_name = True
+        extra = "allow"
 
-# Estimate Story Point input (MỚI)
-class EstimateIn(BaseModel):
-    title: Optional[str] = Field(None, description="Tiêu đề của task.")
-    description: Optional[str] = Field(None, description="Mô tả chi tiết của task.")
-    
-    # Validation cơ bản
-    def model_post_init(self, context: Any) -> None:
-        if not self.title and not self.description:
-            raise ValueError("Phải cung cấp ít nhất 'title' hoặc 'description'.")
+class EstimateSPRequest(BaseModel):
+    title: Optional[str] = ""
+    description: Optional[str] = ""
+    class Config:
+        extra = "allow"
+
+class SummarizeRequest(BaseModel):
+    tasks: List[Dict]
+    use_llm: Optional[bool] = Field(True, alias="use_llm")
+    class Config:
+        allow_population_by_field_name = True
+        extra = "allow"
+
+class GenerateTaskRequest(BaseModel):
+    user_input: Optional[str] = Field("", alias="userInput")
+    project_id: Optional[str] = Field(None, alias="projectId")
+    requirement_text: Optional[str] = Field("", alias="requirement")
+    class Config:
+        allow_population_by_field_name = True
+        extra = "allow"
+
+
+class UpdateTaskRequest(BaseModel):
+    id: str = Field(..., description="User ID phải có")
+    title: Optional[str] = Field(None, alias="title")
+    description: Optional[str] = Field(None, alias="description")
+    status: Optional[str] = Field(None, alias="status")
+    due_date: Optional[str] = Field(None, alias="dueDate")
+    estimate_effort: Optional[int] = Field(None, alias="estimateEffort")
+    actual_effort: Optional[int] = Field(None, alias="actualEffort")
+    implementor_id: Optional[int] = Field(None, alias="implementorId")
+    reviewer_id: Optional[int] = Field(None, alias="reviewerId")
+    project_id: Optional[str] = Field(None, alias="projectId")
+    parent_task_id: Optional[str] = Field(None, alias="parentTaskId")
+    priority: Optional[str] = Field(None, alias="priority")
+    completed_percent: Optional[int] = Field(None, alias="completedPercent")
+    completed_at: Optional[str] = Field(None, alias="completedAt")
+    file_urls: Optional[List[str]] = Field(default_factory=list, alias="fileUrls")
+    class Config:
+        allow_population_by_field_name = True
+        extra = "allow"
+
+class UpdateUserRequest(BaseModel):
+    id: str = Field(..., description="User ID phải có")
+    email: Optional[str] = Field(None, alias="email")
+    password: Optional[str] = Field(None, alias="password")
+    name: Optional[str] = Field(None, alias="name")
+    avatar: Optional[str] = Field(None, alias="avatar")
+    position: Optional[str] = Field(None, alias="position")
+    year_of_experience: Optional[int] = Field(None, alias="yearOfExperience")
+    class Config:
+        allow_population_by_field_name = True
+        extra = "allow"
 
 

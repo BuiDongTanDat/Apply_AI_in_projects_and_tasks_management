@@ -1,11 +1,16 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Dict, Any
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel, Field
+from typing import Dict, Optional, List
 
 from app.services.llm_service import LLMService
 from app.services.vector_store import VectorStoreService 
+from app.schema.input import *
 
 log = logging.getLogger(__name__)
+
+
 
 # --- KHỞI TẠO SERVICE ---
 # Khởi tạo Vector Store instance lúc app khởi động (call instance method)
@@ -26,20 +31,37 @@ def get_vector_store_service():
     return vector_store_service
 
 
-router = APIRouter(prefix="/ai", tags=["AI Tasks"])
+router = APIRouter(prefix="/ai")
+
+# Tạo các group router để dễ phân biệt
+compose_router = APIRouter(
+    prefix="/llm", 
+    tags=["AI / Compose & Generate"]
+)
+
+crud_router = APIRouter(
+    prefix="/vector",
+    tags=["AI / CRUD (Tasks & Users)"]
+)
+
+test_router = APIRouter(
+    prefix="/test",
+    tags=["AI / Debug & Test"]
+)
 
 
+# ------------------- MAIN ENDPOINT -------------------
 # COMPOSE TASK ROUTE
-@router.post("/compose")
+@compose_router.post("/compose")
 async def compose_task(
-    body: Dict[str, Any],
+    body: ComposeRequest,
     llm_svc: LLMService = Depends(get_llm_service)
 ):
     """Tạo một task mới (title, description, subtasks, tags, priority) dựa trên mô tả từ người dùng."""
     try:
         # Gọi hàm tạo task từ LLMService (accept raw dict)
-        user_input = body.get("userInput") or body.get("user_input") or ""
-        project_id = body.get("projectId") or body.get("project_id")  # <-- nhận projectId từ client
+        user_input = body.user_input or ""
+        project_id = body.project_id  # <-- nhận projectId từ client
         raw_result = llm_svc.compose_with_llm(user_input=user_input, project_id=project_id)
         
         if 'error' in raw_result:
@@ -59,17 +81,17 @@ async def compose_task(
 
 
 # ASSIGN TASK ROUTE
-@router.post("/assign")
+@compose_router.post("/assign")
 async def assign_task(
-    body: Dict[str, Any],
+    body: AssignRequest,
     llm_svc: LLMService = Depends(get_llm_service)
 ):
     """Phân công task cho thành viên phù hợp nhất."""
     try:
         # Gọi hàm phân công từ LLMService
-        task_payload = body.get("task", {}) 
-        requirement_text = body.get("requirement_text") or body.get("requirement") or ""
-        project_id = body.get("projectId") or body.get("project_id") 
+        task_payload = body.task or {}
+        requirement_text = body.requirement_text or ""
+        project_id = body.project_id
         raw_result = llm_svc.assign_candidate(
             task=task_payload,
             project_id=project_id,
@@ -92,16 +114,16 @@ async def assign_task(
 
 
 # DUPLICATE FINDER TASK ROUTE
-@router.post("/duplicate")
+@compose_router.post("/duplicate")
 async def find_duplicates(
-    body: Dict[str, Any],
+    body: DuplicateRequest,
     llm_svc: LLMService = Depends(get_llm_service)
 ):
     """Tìm các task có nội dung tương tự (trùng lặp) dựa trên semantic search."""
     try:
         # Gọi hàm tìm kiếm trùng lặp từ LLMService
-        task_payload = body.get("task", {})
-        project_id = body.get("projectId") or body.get("project_id")  # <-- nhận projectId để giới hạn search
+        task_payload = body.task or {}
+        project_id = body.project_id  # <-- nhận projectId để giới hạn search
         raw_result = llm_svc.find_duplicate_tasks(
             task=task_payload,
             threshold=0.25, # Euclidean distance threshold
@@ -123,16 +145,16 @@ async def find_duplicates(
     
 
 # ESTIMATE STORY POINT ROUTE
-@router.post("/estimate_sp")
+@compose_router.post("/estimate_sp")
 async def estimate_story_point(
-    body: Dict[str, Any],
+    body: EstimateSPRequest,
     llm_svc: LLMService = Depends(get_llm_service)
 ):
     """Ước tính Story Point cho task dựa trên Title và Description."""
     
     try:
-        title = body.get("title", "")
-        description = body.get("description", "")
+        title = body.title or ""
+        description = body.description or ""
         # Dự đoán giá trị Story Point thô
         raw_pred = llm_svc.predict_story_point(title=title, desc=description)
         
@@ -151,9 +173,9 @@ async def estimate_story_point(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error during story point estimation.")
 
 # SUMMARIZE ROUTE (UPDATED)
-@router.post("/summarize")
+@compose_router.post("/summarize")
 async def summarize_text(
-    body: Dict[str, Any],
+    body: SummarizeRequest,
     llm_svc: LLMService = Depends(get_llm_service)
 ):
     """
@@ -165,14 +187,14 @@ async def summarize_text(
     Returns sprint report including local metrics and optional LLM summary.
     """
     try:
-        tasks = body.get("tasks")
+        tasks = body.tasks
         if not isinstance(tasks, list):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Missing or invalid 'tasks' list in request body."
             )
 
-        use_llm = bool(body.get("use_llm", True))
+        use_llm = bool(body.use_llm)
 
         # Generate sprint report: local metrics + optional LLM summary
         report = llm_svc.generate_sprint_report(tasks=tasks, use_llm_summary=use_llm)
@@ -189,16 +211,16 @@ async def summarize_text(
         )
 
 # GENERATE TASK (PIPELINE)
-@router.post("/generate_task")
+@compose_router.post("/generate_task")
 async def generate_task(
-    body: Dict[str, Any],
+    body: GenerateTaskRequest,
     llm_svc: LLMService = Depends(get_llm_service)
 ):
     """Tạo task mới với pipeline đầy đủ: compose, assign, duplicate check, estimate SP."""
     try:
-        user_input = body.get("userInput") or body.get("user_input") or ""
-        project_id = body.get("projectId") or body.get("project_id")  # <-- nhận projectId từ client
-        requirement_text = body.get("requirement_text") or body.get("requirement") or ""
+        user_input = body.user_input or ""
+        project_id = body.project_id  # <-- nhận projectId từ client
+        requirement_text = body.requirement_text or ""
 
 
         raw_result = llm_svc.generate_task(
@@ -221,11 +243,116 @@ async def generate_task(
         log.exception(f"Unexpected error in /generate_task: {e}")
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Internal server error during full task generation.")
 
+
+
+# ------------------- CRUD DOCUMENT ROUTES -------------------
+@crud_router.get("/tasks/{task_id}")
+async def get_task_by_id(
+    task_id: str,
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
+):
+    """Lấy thông tin task từ vector store theo task ID."""
+    task = vector_store_svc.get_task_by_id(task_id=task_id)
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found.")
+    return task
+
+@crud_router.get("/users/{user_id}")
+async def get_user_by_id(
+    user_id: str,
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
+):
+    """Lấy thông tin user từ vector store theo user ID."""
+    user = vector_store_svc.get_user_by_id(user_id=user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    return user
+
+@crud_router.post("/tasks/upsert")
+async def upsert_task(
+    task_req: UpdateTaskRequest,
+    force: bool = True, # Bắt buộc xóa bản cũ để tránh trùng lặp task
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
+):
+    """
+    Thêm mới hoặc cập nhật task.
+    BẮT BUỘC phải có task['id'].
+    force=True sẽ xóa bản cũ trước khi insert.
+    """
+    # Lấy task hiện tại nếu có
+    existing_task = vector_store_svc.get_task_by_id(task_req.id)
+    task_data = jsonable_encoder(task_req)
+    
+    # Merge dữ liệu mới với dữ liệu hiện tại (Chỉ các trường KHÔNG None)
+    if existing_task:
+        merged_task = {**existing_task.get("metadata", {}), **{k: v for k, v in task_data.items() if v is not None}}
+    else:
+        merged_task = task_data
+
+    success = vector_store_svc.upsert_task(merged_task, force=force)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Task upsert failed.")
+    
+    task_after = vector_store_svc.get_task_by_id(task_req.id)
+    return {"detail": "Task upsert thành công.", "task_id": task_req.id, "after_updated": task_after}
+
+@crud_router.post("/users/upsert")
+async def upsert_user(
+    user_req: UpdateUserRequest,
+    force: bool = True, # Bắt buộc xóa bản cũ để tránh trùng lặp user
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
+):
+    """
+    Thêm mới hoặc cập nhật user.
+    BẮT BUỘC phải có user['id'].
+    force=True sẽ xóa bản cũ trước khi insert.
+    """
+    existing_user = vector_store_svc.get_user_by_id(user_req.id)
+    user_data = jsonable_encoder(user_req)
+
+    if existing_user:
+        merged_user = {**existing_user.get("metadata", {}), **{k: v for k, v in user_data.items() if v is not None}}
+    else:
+        merged_user = user_data
+
+    success = vector_store_svc.upsert_user(merged_user, force=force)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User upsert failed.")
+
+    after_updated = vector_store_svc.get_user_by_id(user_req.id)
+
+    return {"detail": "User upsert thành công.", "user_id": user_req.id, "after_updated": after_updated}
+
+@crud_router.delete("/tasks/{task_id}")
+async def delete_task_by_id(
+    task_id: str,
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
+):
+    """Xoá task khỏi vector store theo task ID."""
+    success = vector_store_svc.delete_task_by_id(task_id=task_id)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found or could not be deleted.")
+    task_deleted = vector_store_svc.get_task_by_id(task_id=task_id)
+    return {"detail": "Xóa tasks thành công.", "task_deleted": task_deleted}
+
+@crud_router.delete("/users/{user_id}")
+async def delete_user_by_id(
+    user_id: str,
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
+):
+    """Xoá user khỏi vector store theo user ID."""
+    success = vector_store_svc.delete_user_by_id(user_id=user_id)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found or could not be deleted.")
+    user_deleted = vector_store_svc.get_user_by_id(user_id=user_id)
+    return {"detail": "Xóa user thành công.", "user_deleted": user_deleted}
+
+
 # DEBUG 
 # ------------------- TEST ROUTES -------------------
 
 # Test truy vần task liên quan
-@router.get("/test/retrieve_tasks")
+@test_router.get("/retrieve_tasks")
 async def test_retrieve_tasks(
     query: str,
     project_id: str = None,
@@ -236,7 +363,7 @@ async def test_retrieve_tasks(
     return {"query": query, "project_id": project_id, "results": tasks}
 
 # Test truy vần user liên quan
-@router.get("/test/retrieve_users")
+@test_router.get("/retrieve_users")
 async def test_retrieve_users(
     query: str,
     project_id: str = None,
@@ -247,7 +374,7 @@ async def test_retrieve_users(
     return {"query": query, "project_id": project_id, "results": users}
 
 # Test truy vần task kèm score
-@router.get("/test/retrieve_with_scores")
+@test_router.get("/retrieve_with_scores")
 async def test_retrieve_with_scores(
     query: str,
     project_id: str = None,
@@ -258,7 +385,7 @@ async def test_retrieve_with_scores(
     return {"query": query, "project_id": project_id, "results": results}
 
 # Test truy vần task chỉ bằng project_id
-@router.get("/test/retrieve_tasks_by_project")
+@test_router.get("/retrieve_tasks_by_project")
 async def test_retrieve_task_by_project(
     project_id: str,
     llm_svc: LLMService = Depends(get_llm_service)
@@ -268,7 +395,7 @@ async def test_retrieve_task_by_project(
     return {"project_id": project_id, "results": tasks}
 
 # Test truy vấn user chỉ bằng project_id
-@router.get("/test/retrieve_users_by_project")
+@test_router.get("/retrieve_users_by_project")
 async def test_retrieve_users_by_project(
     project_id: str,
     llm_svc: LLMService = Depends(get_llm_service)
@@ -276,3 +403,8 @@ async def test_retrieve_users_by_project(
     """Test retrieve users from vector store by project_id only"""
     users = llm_svc.test_retrieve_users_for_project(project_id=project_id, k=20)
     return {"project_id": project_id, "results": users}
+
+# --- Register grouped routers into main router ---
+router.include_router(compose_router)
+router.include_router(crud_router)
+router.include_router(test_router)

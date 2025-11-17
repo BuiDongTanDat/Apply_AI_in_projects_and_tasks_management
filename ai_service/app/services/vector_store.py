@@ -4,6 +4,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from langchain_postgres import PGVector
 from langchain_huggingface import HuggingFaceEmbeddings
+import uuid
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -67,7 +68,7 @@ class VectorStoreService:
                 log.exception("Failed to initialize PGVector stores at init: %s", e)
                 self.users_store = None
                 self.tasks_store = None
-
+    
     def _init_stores(self):
         """ Tạo PGVector instances (ném lỗi nếu thư viện bên dưới thất bại). """
         if not self.connection:
@@ -85,7 +86,7 @@ class VectorStoreService:
             connection=self.connection,
         )
         log.info("PGVector stores initialized.")
-
+    
     def ensure_stores(self) -> bool:
         """ Kiểm tra các vector store đã được khởi tạo """
         if self.users_store and self.tasks_store:
@@ -99,11 +100,10 @@ class VectorStoreService:
         except Exception as e:
             log.exception("Lỗi: %s", e)
             return False
-
-
+    
     def load_raw_users_tasks(self):
         return self._load_json(self.users_file), self._load_json(self.tasks_file)
-
+    
     def _load_json(self, path: str) -> List[Dict[str, Any]]:
         if not os.path.exists(path):
             log.warning(f"File not found: {path}")
@@ -112,171 +112,166 @@ class VectorStoreService:
             return json.load(f)
 
 
-    # Hàm kiểm tra document đã tồn tại chưa
-    def _document_exists(self, store, original_id: str, query_text: Optional[str] = None) -> bool:
+
+    def make_user_document(self, user):
+        text = (
+            f"Tên: {user.get('name')}. "
+            f"Vị trí: {user_role_description(user.get('position'))}. "
+            f"Kỹ năng: {', '.join(USER_SKILLS.get(user.get('position'), []))}. "
+            f"Kinh nghiệm: {user.get('yearOfExperience', 0)} năm."
+        )
+
+        meta = {
+            "user_id": user["id"],
+            "email": user.get("email"),
+            "name": user.get("name"),
+            "position": user.get("position"),
+            "year_of_experience": user.get("yearOfExperience", 0),
+            "avatar": user.get("avatar"),
+            "created_at": user.get("createdAt"),
+            "type": "user"
+        }
+        return text, meta
+
+    def make_task_document(self, task):
+        subtasks_text = "Không có subtasks."
+        if task.get("subtasks"):
+            subtasks_text = "\n".join([f"- {s['title']}: {s['description']}" for s in task["subtasks"]])
+
+        text = (
+            f"{task.get('title')}\n"
+            f"{task.get('description')}\n"
+            f"Trạng thái: {task.get('status')}\n"
+            f"Ưu tiên: {task.get('priority')}\n"
+            f"Dự án: {task.get('projectId')}\n"
+            f"Nhiệm vụ con:\n{subtasks_text}"
+        )
+
+        meta = {
+            "task_id": task["id"],
+            "title": task.get("title"),
+            "description": task.get("description"),
+            "status": task.get("status"),
+            "priority": task.get("priority"),
+            "project_id": task.get("projectId"),
+            "implementor_id": task.get("implementorId"),
+            "reviewer_id": task.get("reviewerId"),
+            "due_date": task.get("dueDate"),
+            "estimate_effort": task.get("estimateEffort"),
+            "actual_effort": task.get("actualEffort"),
+            "created_at": task.get("createdAt"),
+            "updated_at": task.get("updatedAt"),
+            "parent_task_id": task.get("parentTaskId"),
+            "is_deleted": False,
+            "type": "task"
+        }
+        return text, meta
+
+    # Hàm lấy document IDs theo metadata key-value
+    def _get_document_ids_by_metadata(self, store, key: str, value: str) -> List[str]:
+        """
+        Lấy tất cả document ID trong vector store có metadata[key] == value.
+        """
+        if not store:
+            return []
+
+        ids = []
         try:
-            q = query_text or ""
-            # prefer using a filter if supported
-            try:
-                res = store.similarity_search(q, k=1, filter={"original_id": original_id})
-            except TypeError:
-                # fallback if the client doesn't accept filter kwarg
-                res = store.similarity_search(q, k=5)
-            for r in res:
-                meta = getattr(r, "metadata", {}) or {}
-                if meta.get("original_id") == original_id:
-                    return True
-            return False
+            # Lấy candidate documents (k đủ lớn để bao quát)
+            candidates = store.similarity_search("", k=200)
+            for doc in candidates:
+                meta = getattr(doc, "metadata", {}) or {}
+                if meta.get(key) == value and hasattr(doc, "id"):
+                    ids.append(doc.id)
         except Exception as e:
-            log.exception("document existence check failed: %s", e)
+            log.exception(f"_get_document_ids_by_metadata failed for {key}={value}: {e}")
+        return ids
+
+    # Hàm xóa document theo id_key (thử xóa, nếu không được -> ghi tombstone với is_deleted=True)
+    def _delete_by_id(self, store, id_key: str, id_value: str, tombstone_type: str = "task") -> bool:
+        """
+        Xóa document theo metadata[id_key] = id_value.
+        Nếu không xóa được, tạo tombstone.
+        """
+        if not store:
             return False
 
-    # Hàm xóa document theo original_id
-    def _delete_by_original_id(self, store, original_id: str) -> bool:
         try:
-            # try delete(filter=...) which some PGVector clients support
-            if hasattr(store, "delete"):
-                try:
-                    store.delete(filter={"original_id": original_id})
-                    return True
-                except TypeError:
-                    # delete signature different -> fallthrough to attempt alternate strategies
-                    log.debug("store.delete(filter=...) not supported, will try alternate deletion methods")
-                except Exception:
-                    # if delete(filter=...) exists but fails, log and continue to fallback
-                    log.exception("store.delete(filter=...) failed for original_id=%s", original_id)
+            ids_to_delete = self._get_document_ids_by_metadata(store, id_key, id_value)
+            if ids_to_delete:
+                store.delete(ids=ids_to_delete)
+                log.info(f"Deleted documents for {id_key}={id_value}")
+                return True
 
-            # fallback: search for docs and attempt delete by ids if available
-            try:
-                cands = store.similarity_search("", k=50)
-            except TypeError:
-                cands = store.similarity_search("", k=50)
-            ids_to_delete = []
-            for r in cands:
-                meta = getattr(r, "metadata", {}) or {}
-                if meta.get("original_id") == original_id:
-                    if hasattr(r, "id"):
-                        ids_to_delete.append(r.id)
-            if ids_to_delete and hasattr(store, "delete"):
-                try:
-                    store.delete(ids=ids_to_delete)
-                    return True
-                except Exception:
-                    log.exception("store.delete(ids=...) failed for ids: %s", ids_to_delete)
-            log.warning("Could not delete documents for original_id=%s. Client may not support deletion by metadata.", original_id)
+            # Nếu không có document, tạo tombstone
+            tomb_meta = {id_key: id_value, "is_deleted": True, "type": tombstone_type}
+            store.add_texts([""], [tomb_meta])
+            log.info(f"Added tombstone for {id_key}={id_value}")
+            return True
         except Exception as e:
-            log.exception("delete_by_original_id failed: %s", e)
-        return False
+            log.exception(f"_delete_by_id failed for {id_key}={id_value}: {e}")
+            return False
 
-    # Tạo/update embeddings
+
+    # Tạo/update embeddings (đã chuẩn hóa metadata: user_id/task_id và is_deleted=False)
     def create_or_update_embeddings(self, force: bool = False):
-        # Ensure stores exist
         if not self.ensure_stores():
-            log.warning("Vector stores không khả dụng. Skipping create_or_update_embeddings.")
+            log.warning("Vector stores không khả dụng. Bỏ qua create_or_update_embeddings.")
             return
 
         users, tasks = self.load_raw_users_tasks()
 
         # USERS
         if users:
-            texts, metadatas = [], []
             for u in users:
-                text = f"{u.get('name','')}. Vị trí: {user_role_description(u.get('position',''))}. Kỹ năng: {', '.join(USER_SKILLS.get(u.get('position',''),[]))}. Kinh nghiệm: {u.get('yearOfExperience',0)} năm."
-
-                # If không phải Force = True, bỏ qua user nếu đã tồn tại
                 try:
-                    if not force and self._document_exists(self.users_store, u['id'], text):
-                        log.info("Skipping user %s: đã tồn tại trong vector store", u.get('id'))
+                    if not force and self.get_user_by_id(u["id"]):
+                        log.info(f"User {u['id']} đã tồn tại, bỏ qua upsert.")
                         continue
-                    # Nếu Force = True, xóa user hiện tại
-                    if force:
-                        deleted = self._delete_by_original_id(self.users_store, u['id'])
-                        if deleted:
-                            log.info("Xóa user %s do force=True", u.get('id'))
+                    self.upsert_user(u, force=force)
                 except Exception:
-                    log.exception("Lỗi trong quá trình xử lý user: ", u.get('id'))
-
-                texts.append(text)
-                metadatas.append({
-                    "original_id": u['id'],
-                    "name": u.get('name'),
-                    "email": u.get('email'),
-                    "position": u.get('position'),
-                    "year_of_experience": u.get('yearOfExperience'),
-                    "type": "user"
-                })
-            try:
-                if texts:
-                    self.users_store.add_texts(texts, metadatas)
-                    log.info(f"{len(texts)} new users embeddings saved.")
-                else:
-                    log.info("No new user embeddings to add.")
-            except Exception as e:
-                log.exception("Failed to add user embeddings: %s", e)
-
-        # TASKS
+                    log.exception("Upsert user thất bại: %s", u.get("id"))
+        # TASKS 
         if tasks:
-            tasks_by_parent = {t['id']: [] for t in tasks}
-            for t in tasks:
-                if t.get("parentTaskId"):
-                    tasks_by_parent.setdefault(t["parentTaskId"], []).append(t)
+            # Tạo một dictionary để nhóm các subtask theo parentTaskId
+            subtasks_by_parent = {}
+            for task in tasks:
+                parent_id = task.get("parentTaskId")
+                if parent_id:
+                    if parent_id not in subtasks_by_parent:
+                        subtasks_by_parent[parent_id] = []
+                    subtasks_by_parent[parent_id].append(task)
 
-            parent_tasks = [t for t in tasks if not t.get("parentTaskId")]
-
-            texts, metadatas = [], []
-            for t in parent_tasks:
-                subtasks = tasks_by_parent.get(t['id'], [])
-                subtasks_descriptions = []
-                if subtasks:
-                    for st in subtasks:
-                        subtasks_descriptions.append(f"- {st.get('title','')}: {st.get('description','')}")
-                subtasks_full_text = "\n".join(subtasks_descriptions)
-
-                document_text = (
-                    f"{t.get('title','')}\n"
-                    f"{t.get('description','')}\n"
-                    f"Dự án: {t.get('projectId','')}\n"
-                    "Các nhiệm vụ con:\n"
-                    f"{subtasks_full_text if subtasks_full_text else 'Chưa có bước thực hiện chi tiết.'}"
-                ).strip()
-
-                # Bỏ qua nếu đã tồn tại trừ khi ép buộc tạo lại (force=True)
+            # Lặp qua tất cả các task. Nếu là task cha, đính kèm các subtask đã nhóm vào.
+            parent_tasks_with_subtasks = []
+            for task in tasks:
+                if not task.get("parentTaskId"):
+                    # Đây là task cha, lấy danh sách subtask của nó từ dictionary đã tạo
+                    task_id = task.get("id")
+                    subtasks = subtasks_by_parent.get(task_id, [])
+                    task['subtasks'] = subtasks  # Thêm subtasks vào đối tượng task cha
+                    parent_tasks_with_subtasks.append(task)
+            
+            # upsert các task cha đã được bổ sung đầy đủ thông tin
+            for t in parent_tasks_with_subtasks:
                 try:
-                    if not force and self._document_exists(self.tasks_store, t['id'], document_text):
-                        log.info("Skipping task %s: already exists in vector store", t.get('id'))
+                    if not force and self.get_task_by_id(t["id"]):
+                        log.info(f"Task {t['id']} đã tồn tại, bỏ qua upsert.")
                         continue
-                    if force:
-                        deleted = self._delete_by_original_id(self.tasks_store, t['id'])
-                        if deleted:
-                            log.info("Deleted existing vectors for task %s due to force=True", t.get('id'))
+                    self.upsert_task(t, force=force)
                 except Exception:
-                    log.exception("Existence/deletion check failed for task %s; proceeding to add", t.get('id'))
+                    log.exception("Upsert task thất bại: %s", t.get("id"))
 
-                texts.append(document_text)
-                metadatas.append({
-                    "original_id": t['id'],
-                    "title": t.get('title'),
-                    "description": t.get('description'),
-                    "status": t.get('status'),
-                    "project_id": t.get('projectId'),
-                    "implementor_id": t.get('implementorId'),
-                    "parent_task_id": t.get('parentTaskId'),
-                    "type": "task"
-                })
-            try:
-                if texts:
-                    self.tasks_store.add_texts(texts, metadatas)
-                    log.info(f"{len(texts)} new tasks embeddings saved.")
-                else:
-                    log.info("No new task embeddings to add.")
-            except Exception as e:
-                log.exception("Failed to add task embeddings: %s", e)
 
-    # Hàm tìm kiếm task liên quan
+
+    # TRUY VẤN ------------------
+
+    # Hàm tìm kiếm task liên quan (bỏ qua tài liệu tombstone is_deleted=True)
     def retrieve_tasks_for_query(self, query: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
         if not self.tasks_store:
             log.warning("tasks_store not initialized. retrieve_tasks_for_query returns empty list.")
             return []
+        # try to include project_id filter; still use metadata-level filtering afterward to remove tombstones
         filters = {"project_id": project_id} if project_id else None
         try:
             results = self.tasks_store.similarity_search(query, k=k, filter=filters)
@@ -286,23 +281,24 @@ class VectorStoreService:
             log.exception("similarity_search failed: %s", e)
             return []
 
-        # Loại bỏ các document trùng original_id, giữ kết quả đầu tiên
         seen = set()
         unique = []
         for r in results:
             meta = getattr(r, "metadata", {}) or {}
-            orig = meta.get("original_id")
+            # skip tombstones
+            if meta.get("is_deleted"):
+                continue
+            orig = meta.get("task_id")
             if orig and orig in seen:
                 continue
             if orig:
                 seen.add(orig)
-            # Trả về page_content (document text) và metadata rõ ràng
             unique.append({"content": r.page_content, "metadata": meta})
             if len(unique) >= k:
                 break
         return unique
 
-    # Hàm tìm kiếm task liên quan kèm score
+    # Hàm tìm kiếm task liên quan kèm score (bỏ qua tombstones)
     def retrieve_tasks_with_scores(self, query: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """ Tìm kiếm các task liên quan kèm score (cosine distance - Càng thấp -> Khoảng cách càng ngắn --> Càng giống) tương tự dựa trên truy vấn. """
         if not self.tasks_store:
@@ -317,13 +313,14 @@ class VectorStoreService:
             log.exception("similarity_search_with_score failed: %s", e)
             return []
 
-        # results is list of (doc, score)
         seen = set()
         unique = []
         for item in results:
             doc, score = item[0], item[1]
             meta = getattr(doc, "metadata", {}) or {}
-            orig = meta.get("original_id")
+            if meta.get("is_deleted"):
+                continue
+            orig = meta.get("task_id")
             if orig and orig in seen:
                 continue
             if orig:
@@ -333,7 +330,7 @@ class VectorStoreService:
                 break
         return unique
 
-    # Hàm lấy các task trong một project
+    # Hàm lấy các task trong một project (bỏ tombstones)
     def retrieve_tasks_for_project(self, project_id: str, k: int = 10) -> List[Dict[str, Any]]:
         if not self.tasks_store:
             log.warning("tasks_store not initialized. retrieve_tasks_for_project returns empty list.")
@@ -346,14 +343,13 @@ class VectorStoreService:
         except Exception as e:
             log.exception("similarity_search failed: %s", e)
             return []
-        return [{"content": r.page_content, "metadata": r.metadata} for r in results]
-    
-    # Hàm lấy các user tham gia trong một projec (Chưa triển khai, hiện tại lấy tất cả từ file)
+        return [{"content": r.page_content, "metadata": r.metadata} for r in results if not (getattr(r, "metadata", {}) or {}).get("is_deleted")]
+
+    # Hàm lấy các user tham gia trong một project (bỏ tombstones)
     def retrieve_users_for_project(self, project_id: str, k: int = 10) -> List[Dict[str, Any]]:
         if not self.users_store:
             log.warning("users_store not initialized. retrieve_users_for_project returns empty list.")
             return []
-        filters = {"project_id": project_id}
         try:
             results = self.users_store.similarity_search("", k=k, filter=None)
         except TypeError:
@@ -361,14 +357,24 @@ class VectorStoreService:
         except Exception as e:
             log.exception("users similarity_search failed: %s", e)
             return []
-        return [{"content": f"{r.page_content}. {r.metadata.get('position','')}", "metadata": r.metadata} for r in results]
-    
-    # Hàm tìm người dùng phù hợp cho văn bản nhiệm vụ
+        # use getattr safely for metadata access and filter out tombstones
+        out = []
+        for r in results:
+            meta = getattr(r, "metadata", {}) or {}
+            if meta.get("is_deleted"):
+                continue
+            position = meta.get('position', '')
+            content = f"{r.page_content}. {position}"
+            out.append({"content": content, "metadata": meta})
+            if len(out) >= k:
+                break
+        return out
+
+    # Hàm tìm người dùng phù hợp cho văn bản nhiệm vụ (bỏ tombstones)
     def retrieve_users_for_query(self, task_text: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
         if not self.users_store:
             log.warning("users_store not initialized. retrieve_users_for_task_text returns empty list.")
             return []
-        # users table doesn't have project_id in your schema, keep None unless you add such a column
         filters = None
         try:
             results = self.users_store.similarity_search(task_text, k=k, filter=filters)
@@ -377,5 +383,106 @@ class VectorStoreService:
         except Exception as e:
             log.exception("users similarity_search failed: %s", e)
             return []
-        return [{"content": f"Tên: {r.page_content}. Vị trí: {r.metadata.get('position','')}", "metadata": r.metadata} for r in results]
+        return [{"content": f"Tên: {r.page_content}. Vị trí: {r.metadata.get('position','')}", "metadata": r.metadata} for r in results if not (getattr(r, "metadata", {}) or {}).get("is_deleted")]
 
+
+    # CRUD document ------------------
+    def get_task_by_id(self, task_id: str) -> Optional[Dict[str, Any]]:
+        """Lấy thông tin chi tiết của một task từ vector store bằng ID."""
+        if not self.ensure_stores(): return None
+        try:
+            results = self.tasks_store.similarity_search("", k=1, filter={"task_id": task_id})
+            if results:
+                # Trả về document đầu tiên tìm thấy
+                return {"content": results[0].page_content, "metadata": results[0].metadata}
+            return None
+        except Exception as e:
+            log.exception(f"Failed to get task by id {task_id}: {e}")
+            return None
+
+    def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Lấy thông tin chi tiết của một user từ vector store bằng ID."""
+        if not self.ensure_stores(): return None
+        try:
+            results = self.users_store.similarity_search("", k=1, filter={"user_id": user_id})
+            if results:
+                # Trả về document đầu tiên tìm thấy
+                return {"content": results[0].page_content, "metadata": results[0].metadata}
+            return None
+        except Exception as e:
+            log.exception(f"Failed to get user by id {user_id}: {e}")
+            return None
+        
+
+    def upsert_task(self, task: dict, force: bool = False):
+        if not self.ensure_stores() or "id" not in task:
+            return False
+        task_id = task["id"]
+        text, meta = self.make_task_document(task)
+        try:
+            existing_ids = self._get_document_ids_by_metadata(self.tasks_store, "task_id", task_id)
+            if existing_ids:
+                if not force:
+                    log.info(f"Task {task_id} đã tồn tại và force=False, bỏ qua upsert.")
+                    return True
+                else:
+                    self._delete_by_id(self.tasks_store, "task_id", task_id)
+
+            self.tasks_store.add_texts([text], [meta])
+            log.info(f"Upsert task {task_id} thành công.")
+            return True
+        except Exception as e:
+            log.exception(f"Upsert task {task_id} thất bại: {e}")
+            return False
+
+    def upsert_user(self, user: dict, force: bool = False):
+        if not self.ensure_stores() or "id" not in user:
+            return False
+        user_id = user["id"]
+        text, meta = self.make_user_document(user)
+        try:
+            existing_ids = self._get_document_ids_by_metadata(self.users_store, "user_id", user_id)
+            if existing_ids:
+                if not force:
+                    log.info(f"User {user_id} đã tồn tại và force=False, bỏ qua upsert.")
+                    return True
+                else:
+                    self._delete_by_id(self.users_store, "user_id", user_id)
+
+            # Thêm hoặc cập nhật document mới
+            self.users_store.add_texts([text], [meta])
+            log.info(f"Upsert user {user_id} thành công.")
+            return True
+        except Exception as e:
+            log.exception(f"Upsert user {user_id} thất bại: {e}")
+            return False
+
+
+    # Xóa task theo ID
+    def delete_task_by_id(self, task_id: str):
+        if not self.ensure_stores():
+            return False
+        try:
+            res = self._delete_by_id(self.tasks_store, "task_id", task_id)
+            if res:
+                log.info(f"Đã xóa task {task_id}.")
+            else:
+                log.warning(f"Không thể xóa task {task_id}.")
+            return res
+        except Exception as e:
+            log.exception(f"Delete task {task_id} thất bại: {e}")
+            return False
+
+    def delete_user_by_id(self, user_id: str):
+        if not self.ensure_stores():
+            return False
+        try:
+            res = self._delete_by_id(self.users_store, "user_id", user_id)
+            if res:
+                log.info(f"Đã xóa user {user_id}.")
+            else:
+                log.warning(f"Không thể xóa user {user_id}.")
+            return res
+        except Exception as e:
+            log.exception(f"Delete user {user_id} thất bại: {e}")
+            return False

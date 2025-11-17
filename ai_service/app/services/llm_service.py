@@ -16,6 +16,7 @@ from langchain_core.runnables import  RunnablePassthrough, RunnableMap, Runnable
 from langchain_huggingface import HuggingFaceEmbeddings
 from app.services.vector_store import VectorStoreService
 from app.schema.output import *
+from app.schema.input import *
 
 # Add small imports for date/time calculations
 from datetime import datetime
@@ -642,6 +643,9 @@ class LLMService:
             "duplicates": result.get("duplicates"),
             "assignment": result.get("assignment"),
         }
+    
+
+
 
     # -------------------- DEBUG / TESTING --------------------
     def test_retrieve_tasks(self, query: str, project_id: Optional[str] = None, k: int = 5):
