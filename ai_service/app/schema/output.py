@@ -21,27 +21,25 @@ class ComposeOut(BaseModel):
 
 # Dùng cho chức năng duplicate task
 class DuplicateDoc(BaseModel):
-    metadata: Dict[str, Any]
-    score: float
     content: str
-    raw: Dict[str, Any]
+    score: float
+    metadata: Dict[str, Any]  
 
 class DuplicateTaskOut(BaseModel):
     duplicates: List[DuplicateDoc]
-    query_embedding: Optional[List[float]] = []
     nearest_tasks: Optional[List[Dict[str, Any]]] = []
 
 
 
 # Dùng cho chức năng assign task
-class AssigneeOut(BaseModel):
-    id: int
+class AssigneeUserOut(BaseModel):
+    id: str
     email: str
     name: str
     position: str
 
 class AssignOut(BaseModel):
-    assignee: AssigneeOut
+    assignee: AssigneeUserOut
     reason: str
 
 

@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 vector_store_service = VectorStoreService()
 try:
     # create_or_update_embeddings is an instance method — call it on the instance
-    vector_store_service.create_or_update_embeddings(force=False)
+    vector_store_service.sync_data(force=False)
 except Exception as e:
     log.warning("Vector store embedding initialization failed at startup: %s", e)
     
@@ -61,7 +61,7 @@ async def compose_task(
     try:
         # Gọi hàm tạo task từ LLMService (accept raw dict)
         user_input = body.user_input or ""
-        project_id = body.project_id  # <-- nhận projectId từ client
+        project_id = body.project_id  #nhận projectId từ client
         raw_result = llm_svc.compose_with_llm(user_input=user_input, project_id=project_id)
         
         if 'error' in raw_result:
@@ -155,8 +155,9 @@ async def estimate_story_point(
     try:
         title = body.title or ""
         description = body.description or ""
+        raw_text = f"{title} {description}"
         # Dự đoán giá trị Story Point thô
-        raw_pred = llm_svc.predict_story_point(title=title, desc=description)
+        raw_pred = llm_svc.predict_story_point(raw_text)
         
         # Gợi ý Story Point theo Planning Poker
         suggested_sp = llm_svc.suggest_story_point(raw_pred)
@@ -275,26 +276,18 @@ async def upsert_task(
     vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
 ):
     """
-    Thêm mới hoặc cập nhật task.
-    BẮT BUỘC phải có task['id'].
-    force=True sẽ xóa bản cũ trước khi insert.
+    Thêm mới hoặc cập nhật task. BẮT BUỘC phải có task['id']. force=True sẽ xóa bản cũ trước khi insert.
     """
-    # Lấy task hiện tại nếu có
-    existing_task = vector_store_svc.get_task_by_id(task_req.id)
     task_data = jsonable_encoder(task_req)
-    
-    # Merge dữ liệu mới với dữ liệu hiện tại (Chỉ các trường KHÔNG None)
-    if existing_task:
-        merged_task = {**existing_task.get("metadata", {}), **{k: v for k, v in task_data.items() if v is not None}}
-    else:
-        merged_task = task_data
-
-    success = vector_store_svc.upsert_task(merged_task, force=force)
+    success = vector_store_svc.upsert_task(task=task_data, force=force)
     if not success:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Task upsert failed.")
-    
-    task_after = vector_store_svc.get_task_by_id(task_req.id)
-    return {"detail": "Task upsert thành công.", "task_id": task_req.id, "after_updated": task_after}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to upsert task.")
+    updated_task = vector_store_svc.get_task_by_id(task_id=task_req.id)
+    return {
+            "detail": "Upsert task thành công.", 
+            "task": updated_task
+            }
+   
 
 @crud_router.post("/users/upsert")
 async def upsert_user(
@@ -303,25 +296,18 @@ async def upsert_user(
     vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
 ):
     """
-    Thêm mới hoặc cập nhật user.
-    BẮT BUỘC phải có user['id'].
-    force=True sẽ xóa bản cũ trước khi insert.
+    Thêm mới hoặc cập nhật user. BẮT BUỘC phải có user['id']. force=True sẽ xóa bản cũ trước khi insert.
     """
-    existing_user = vector_store_svc.get_user_by_id(user_req.id)
     user_data = jsonable_encoder(user_req)
-
-    if existing_user:
-        merged_user = {**existing_user.get("metadata", {}), **{k: v for k, v in user_data.items() if v is not None}}
-    else:
-        merged_user = user_data
-
-    success = vector_store_svc.upsert_user(merged_user, force=force)
+    success = vector_store_svc.upsert_user(user=user_data, force=force)
     if not success:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User upsert failed.")
-
-    after_updated = vector_store_svc.get_user_by_id(user_req.id)
-
-    return {"detail": "User upsert thành công.", "user_id": user_req.id, "after_updated": after_updated}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to upsert user.")
+    updated_user = vector_store_svc.get_user_by_id(user_id=user_req.id)
+    return {
+            "detail": "Upsert user thành công.", 
+            "user": updated_user
+            }
+    
 
 @crud_router.delete("/tasks/{task_id}")
 async def delete_task_by_id(

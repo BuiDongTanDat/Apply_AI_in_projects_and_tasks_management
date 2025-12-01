@@ -4,8 +4,8 @@ from typing import List, Optional, Dict, Any
 
 #Request body
 class ComposeRequest(BaseModel):
-    user_input: Optional[str] = Field("", alias="userInput")
-    project_id: Optional[str] = Field(None, alias="projectId")
+    user_input: Optional[str] = Field("", alias="user_input")
+    project_id: Optional[str] = Field(None, alias="project_id")
     class Config:
         allow_population_by_field_name = True
         extra = "allow"
@@ -13,14 +13,14 @@ class ComposeRequest(BaseModel):
 class AssignRequest(BaseModel):
     task: Dict = Field(default_factory=dict)
     requirement_text: Optional[str] = Field("", alias="requirement")
-    project_id: Optional[str] = Field(None, alias="projectId")
+    project_id: Optional[str] = Field(None, alias="project_id")
     class Config:
         allow_population_by_field_name = True
         extra = "allow"
 
 class DuplicateRequest(BaseModel):
     task: Dict = Field(default_factory=dict)
-    project_id: Optional[str] = Field(None, alias="projectId")
+    project_id: Optional[str] = Field(None, alias="project_id")
     class Config:
         allow_population_by_field_name = True
         extra = "allow"
@@ -39,8 +39,8 @@ class SummarizeRequest(BaseModel):
         extra = "allow"
 
 class GenerateTaskRequest(BaseModel):
-    user_input: Optional[str] = Field("", alias="userInput")
-    project_id: Optional[str] = Field(None, alias="projectId")
+    user_input: Optional[str] = Field("", alias="user_input")
+    project_id: Optional[str] = Field(None, alias="project_id")
     requirement_text: Optional[str] = Field("", alias="requirement")
     class Config:
         allow_population_by_field_name = True

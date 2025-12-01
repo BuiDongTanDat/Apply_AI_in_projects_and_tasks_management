@@ -1,110 +1,46 @@
+import re
 import json
 import logging
-from pathlib import Path
-from typing import List, Optional, Dict, Any
-import os
-import re
-import joblib
-import pandas as pd
 import numpy as np  
+import pandas as pd
+from datetime import datetime
+from typing import List, Optional, Dict, Any
 from dotenv import load_dotenv
 from langdetect import detect 
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.runnables import  RunnablePassthrough, RunnableMap, RunnableLambda, RunnableSequence
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.runnables import  RunnablePassthrough, RunnableLambda, RunnableParallel
 from app.services.vector_store import VectorStoreService
 from app.schema.output import *
 from app.schema.input import *
+from app.services.models_loader import ModelsLoader
 
-# Add small imports for date/time calculations
-from datetime import datetime
+load_dotenv()
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+log = logging.getLogger(__name__)
 
 device = "cpu"
 print("Current device:", device)
 
-load_dotenv()
 
-# Import config AFTER load_dotenv so config reads .env values at import time
-import app.config as config
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-log = logging.getLogger(__name__)
 
 class LLMService:
     def __init__(self, vector_store: Optional[VectorStoreService] = None):
-        # Determine if Gemini (Google) should be enabled based on config/API key presence
-        gemini_key = getattr(config, "GOOGLE_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "")
-        self.enabled = bool(gemini_key)
-        # Choose model name from config or fallback
-        self.model_scoring = getattr(
-            config, "GEMINI_MODEL_SCORING", getattr(config, "GEMINI_MODEL_GENERIC", "gemini-1.5-flash")) 
-
-        if self.enabled:
-            print("[LLM] Gemini enabled with model:", self.model_scoring)
-        else:
-            print("[LLM] Gemini disabled (missing API key).")
-
-        # Vector store instance (injected or created)
-        self.vector_store = vector_store or VectorStoreService()
-
-        # Load LLM chỉ khi enabled; nếu không thì giữ là None để tránh lỗi runtime
-        if self.enabled:
-            try:
-                self.llm = ChatGoogleGenerativeAI(
-                    model=getattr(config, "GEMINI_MODEL_GENERIC", "gemini-2.5-flash"),
-                    temperature=0.7,
-                    max_tokens=None,
-                    timeout=None,
-                    max_retries=2,
-                )
-            except Exception as e:
-                log.exception("Failed to initialize ChatGoogleGenerativeAI, disabling LLM: %s", e)
-                self.llm = None
-                self.enabled = False
-        else:
-            self.llm = None
-
-        # Load embeddings model (HuggingFaceEmbeddings wrapper from langchain)
-        try:
-            self.embed_model = HuggingFaceEmbeddings(
-                model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-                model_kwargs={"device": device}
-            )
-        except Exception as e:
-            log.exception("Failed to load HuggingFaceEmbeddings model: %s", e)
-            self.embed_model = None
-
-
-        self.model_dir = Path(__file__).resolve().parent.parent / "models"
-        model_path = self.model_dir / "xgb_storypoint.pkl"
-        scaler_path = self.model_dir / "scaler.pkl"
-        config_path = self.model_dir / "config.json"
-        
         # Load models
-        try:
-            self.xgb_model = joblib.load(model_path)
-            if self.xgb_model:
-                log.info("Đã load XGBoost model.")
-        except FileNotFoundError:
-            log.warning(f"Không tìm thấy file model: {model_path}")
-            self.xgb_model = None
+        self.llm = ModelsLoader.llm()
+        self.embed_model = ModelsLoader.embeddings()
+        self.xgb_model = ModelsLoader.xgb_model()
+        self.scaler = ModelsLoader.scaler()
 
-        try:
-            self.scaler = joblib.load(scaler_path)
-            if self.scaler:
-                log.info("Đã load Scaler.")
-        except FileNotFoundError:
-            log.warning(f"Không tìm thấy file scaler: {scaler_path}")
-            self.scaler = None
+        # Vector Store
+        if vector_store is None:
+            self.vector_store = VectorStoreService(
+                embedding_model=self.embed_model
+            )
+        else:
+            self.vector_store = vector_store
 
-        try:
-            with open(config_path, "r") as f:
-                self.config = json.load(f)
-        except FileNotFoundError:
-            log.warning(f"Đã load config: {config_path}")
-            self.config = {}
+        # LLM enabled flag
+        self.enabled = self.llm is not None
         
     # HÀM TẠO TASK (COMPOSITION) - DÙNG RETRIEVER LẤY NGỮ CẢNH
     def compose_with_llm(self, user_input: str, project_id: Optional[str] = None) -> ComposeOut:
@@ -173,14 +109,7 @@ class LLMService:
         
         # Tạo chain
         chain = (
-            {
-                "context": lambda x: x["context"],
-                "user_input": lambda x: x["user_input"],
-                "lang": lambda x: x["lang"],
-            }
-            | prompt
-            | self.llm
-            | PydanticOutputParser(pydantic_object=ComposeOut)
+            prompt | self.llm.with_structured_output(ComposeOut)
         )
 
         # 3. Invoke LLM và Xử lý Kết quả
@@ -192,23 +121,10 @@ class LLMService:
                 "lang": lang_name
             })
 
-            if isinstance(response, ComposeOut):
-                log.info("Tạo task thành công (ComposeOut).")
-                return response
-
-            if isinstance(response, (dict, list)):
-                return response
-
-            try:
-                parsed = _extract_and_parse_json(str(response))
-                log.info("Tạo task thành công (parsed JSON).")
-                return parsed
-            except Exception as e:
-                log.warning("Cannot parse JSON from LLM response: %s", e)
-                return {"raw": response}
-        except json.JSONDecodeError:
-            log.warning("Không parse được JSON — Trả về raw text.")
-            return {"raw": response}
+            # Response is always: {"raw": AIMessage, "parsed": ComposeOut, "parsing_error": None/error}
+            log.info("Tạo task thành công với LLM Compose.")
+            return response
+        
         except Exception as e:
             log.exception("LLM chain.invoke/run failed")
             return {"error": str(e)}
@@ -219,7 +135,7 @@ class LLMService:
         Gán người dùng phù hợp, sử dụng PydanticOutputParser để đảm bảo cấu trúc.
         Hàm này tự động lấy dữ liệu từ Vector Store.
         """
-        lang_name = _detect_language(requirement_text or "vi")
+        lang_name = _detect_language(requirement_text)
 
         if not project_id:
             log.warning("Task không có project_id.")
@@ -227,11 +143,28 @@ class LLMService:
 
         try:
             # Lấy dữ liệu ngữ cảnh từ Vector Store
-            project_users_docs = self.vector_store.retrieve_users_for_project(project_id=project_id, k=50)
-            project_tasks_docs = self.vector_store.retrieve_tasks_for_project(project_id=project_id, k=100)
-            users_context = [doc.get("metadata") for doc in project_users_docs]
-            tasks_context = [doc.get("metadata") for doc in project_tasks_docs]
+            retrieve_context = RunnableParallel(
+            users=RunnableLambda(
+                lambda _: self.vector_store.retrieve_users_for_project(
+                    project_id=project_id, k=10
+                )
+            ),
+            tasks=RunnableLambda(
+                lambda _: self.vector_store.retrieve_tasks_for_project(
+                    project_id=project_id, k=10
+                    )
+                )
+            )
+            context = retrieve_context.invoke(None)
+            users_docs = context["users"]
+            tasks_docs = context["tasks"]
             
+            if not users_docs:
+                log.warning(f"Không tìm thấy user cho project {project_id}")
+                return {"error": f"Không có user trong project: {project_id}"}
+            
+            log.info(f"Đã truy xuất {len(users_docs)} users, {len(tasks_docs)} tasks")
+
             # Template và Prompt (không đổi)
             template = """
                     Bạn là một AI có nhiệm vụ phân công người thực hiện phù hợp nhất cho một nhiệm vụ. Bạn nhận vào các dữ liệu sau:
@@ -257,7 +190,7 @@ class LLMService:
                             }},
                             "reason": "string"
                         }}
-                        "reason": "string (lời giải thích ngắn gọn, liệt kê tải công việc, số task đã DONE, kinh nghiệm, và mức độ phù hợp vị trí **bằng ngôn ngữ {lang}**)"
+                        "reason": "string (lời giải thích ngắn gọn, liệt kê tải công việc, số task đã DONE, kinh nghiệm, và mức độ phù hợp vị trí **bằng ngôn ngữ Tiếng Việt**)"
                       }}
                     - Sử dụng chính xác dữ liệu được cung cấp (task/users/tasks) để tính toán, không tự thêm thông tin bên ngoài.
 
@@ -269,30 +202,27 @@ class LLMService:
             prompt = PromptTemplate(template=template, input_variables=["task", "users", "tasks", "requirement", "lang"])
             
 
-            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=AssignOut)
+            chain = prompt | self.llm.with_structured_output(AssignOut)
             
 
-            llm_assignment_suggestion: AssignOut = chain.invoke({
+            assignment = chain.invoke({
                 "task": json.dumps(task, ensure_ascii=False),
-                "users": json.dumps(users_context, ensure_ascii=False),
-                "tasks": json.dumps(tasks_context, ensure_ascii=False),
-                "requirement": requirement_text or "Không có",
+                "users": json.dumps(users_docs, ensure_ascii=False),
+                "tasks": json.dumps(tasks_docs, ensure_ascii=False),
+                "requirement": requirement_text or "None",
                 "lang": lang_name
             })
+            print (assignment)
+            log.info(f"Assignment successful: {assignment.assignee.name}")
 
-            # Kiểm tra để chắc chắn parser hoạt động
-            if isinstance(llm_assignment_suggestion, AssignOut):
-                log.info("Gán người thực hiện thành công (AssignOut).")
-            
-            # Lấy các user liên quan bằng vector search
-            related_users = []
-            if requirement_text:
-                related_users = self.vector_store.retrieve_users_for_query(requirement_text, k=5)
-
-            # *** KẾT HỢP KẾT QUẢ ***
-            # Trả về một dictionary chứa cả kết quả từ LLM (đã được parse) và kết quả từ vector store
+            related_users = (
+                self.vector_store.retrieve_users_for_query(requirement_text, k=5)
+                if requirement_text
+                else []
+            )
+            # Return structured response
             return {
-                "assignment": llm_assignment_suggestion.model_dump(),  # Chuyển object Pydantic thành dict
+                "assignment": assignment.model_dump(),  # Already a dict from Pydantic
                 "related_users": related_users
             }
             
@@ -302,7 +232,7 @@ class LLMService:
     
     
     # HÀM DUPLICATE FINDER
-    def find_duplicate_tasks(self, task: dict, threshold: float = 0.25, k: int = 3, project_id: Optional[str] = None) -> DuplicateTaskOut:
+    def find_duplicate_tasks(self, task: dict, threshold: float = 0.2, k: int = 3, project_id: Optional[str] = None) -> DuplicateTaskOut:
         """
         Tìm các nhiệm vụ trùng lặp dựa trên embedding similarity/distance.
         """
@@ -332,11 +262,10 @@ class LLMService:
                     score = doc.get("score", doc.get("similarity", doc.get("distance", None)))
                 try:
                     if (score <= threshold):
-                        duplicates.append({                
+                        duplicates.append({
+                            "content": doc.get("content"),  
+                            "score": score,          
                             "metadata": doc.get("metadata"),
-                            "score": score,
-                            "content": doc.get("content"),
-                            "raw": doc
                         })
                         
                 except Exception:
@@ -345,7 +274,6 @@ class LLMService:
 
             return DuplicateTaskOut(
                 duplicates=[DuplicateDoc(**d) for d in duplicates],
-                query_embedding=retrieved[0].get("embedding", []) if retrieved else [],
                 nearest_tasks=retrieved
             )
         except Exception as e:
@@ -709,31 +637,6 @@ def _detect_language(text: str) -> str:
         return "Vietnamese" if lang_code.startswith("vi") else "English"
     except Exception:
         return "English"
-
-# Hàm hỗ trợ parse JSON từ text response của LLM
-def _extract_and_parse_json(text: str) -> Any:
-    """
-    - Loại bỏ code fences (```json / ```).
-    - Tìm substring bắt đầu với first '{' và kết thúc với last '}'.
-    - Loại bỏ trailing commas trước '}' hoặc ']' (simple cleanup).
-    - Cố parse bằng json.loads, ném exception nếu không parse được.
-    """
-    if not text:
-        raise ValueError("Empty response")
-    s = text.strip()
-    # remove code fences
-    s = s.replace("```json", "").replace("```", "").strip()
-    # Find the outermost JSON object (from first { to last })
-    first = s.find("{")
-    last = s.rfind("}")
-    if first == -1 or last == -1 or last < first:
-        raise ValueError("No JSON object found in response")
-    candidate = s[first:last+1]
-    # Remove trailing commas before } or ]
-    candidate = re.sub(r",\s*(\}|])", r"\1", candidate)
-    # Optional: collapse control chars that may break json
-    # Try parsing
-    return json.loads(candidate)
 
 
 # Hàm hỗ trợ build doc từ task object để truyền vào estimate
