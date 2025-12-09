@@ -223,8 +223,8 @@ class VectorStoreService:
             search_kwargs=search_kwargs
         )
     
-    # Hàm tìm kiếm task liên quan (bỏ qua tài liệu tombstone is_deleted=True)
-    def retrieve_tasks_for_query(self, query: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    # Hàm tìm kiếm task liên quan 
+    def retrieve_tasks_by_query(self, query: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
         if not self.tasks_store:
             log.warning("tasks_store not initialized. retrieve_tasks_for_query returns empty list.")
             return []
@@ -255,7 +255,7 @@ class VectorStoreService:
                 break
         return unique
 
-    # Hàm tìm kiếm task liên quan kèm score (bỏ qua tombstones)
+    # Hàm tìm kiếm task liên quan kèm score 
     def retrieve_tasks_with_scores(self, query: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """ Tìm kiếm các task liên quan kèm score (cosine distance - Càng thấp -> Khoảng cách càng ngắn --> Càng giống) tương tự dựa trên truy vấn. """
         if not self.tasks_store:
@@ -287,8 +287,8 @@ class VectorStoreService:
                 break
         return unique
 
-    # Hàm lấy các task trong một project (bỏ tombstones)
-    def retrieve_tasks_for_project(self, project_id: str, k: int = 10) -> List[Dict[str, Any]]:
+    # Hàm lấy các task trong một project 
+    def retrieve_tasks_by_project(self, project_id: str, k: int = 10) -> List[Dict[str, Any]]:
         if not self.tasks_store:
             log.warning("tasks_store not initialized. retrieve_tasks_for_project returns empty list.")
             return []
@@ -301,9 +301,25 @@ class VectorStoreService:
             log.exception("similarity_search failed: %s", e)
             return []
         return [{"content": r.page_content, "metadata": r.metadata} for r in results if not (getattr(r, "metadata", {}) or {}).get("is_deleted")]
+    
+    # Hàm lấy task theo user_id
+    def retrieve_tasks_by_user(self, user_id: str, project_id:str, k: int = 10) -> List[Dict[str, Any]]:
+        if not self.tasks_store:
+            log.warning("tasks_store not initialized. retrieve_tasks_for_user returns empty list.")
+            return []
+        filters = {"implementor_id": user_id, "project_id": project_id}
+        try:
+            results = self.tasks_store.similarity_search("", k=k, filter=filters)
+        except TypeError:
+            results = self.tasks_store.similarity_search("", k=k)
+        except Exception as e:
+            log.exception("similarity_search failed: %s", e)
+            return []
+        return [{"content": r.page_content, "metadata": r.metadata} for r in results if not (getattr(r, "metadata", {}) or {}).get("is_deleted")]
+    
 
-    # Hàm lấy các user tham gia trong một project (bỏ tombstones)
-    def retrieve_users_for_project(self, project_id: str, k: int = 10) -> List[Dict[str, Any]]:
+    # Hàm lấy các user tham gia trong một project
+    def retrieve_users_by_project(self, project_id: str, k: int = 10) -> List[Dict[str, Any]]:
         if not self.users_store:
             log.warning("users_store not initialized. retrieve_users_for_project returns empty list.")
             return []
@@ -327,12 +343,12 @@ class VectorStoreService:
                 break
         return out
 
-    # Hàm tìm người dùng phù hợp cho văn bản nhiệm vụ (bỏ tombstones)
-    def retrieve_users_for_query(self, task_text: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    # Hàm tìm người dùng phù hợp cho văn bản nhiệm vụ
+    def retrieve_users_by_query(self, task_text: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
         if not self.users_store:
             log.warning("users_store not initialized. retrieve_users_for_task_text returns empty list.")
             return []
-        filters = None
+        filters = None # filters = {"project_id": project_id} Hiện tại chưa cung cấp
         try:
             results = self.users_store.similarity_search(task_text, k=k, filter=filters)
         except TypeError:
@@ -342,6 +358,7 @@ class VectorStoreService:
             return []
         return [{"content": f"Tên: {r.page_content}. Vị trí: {r.metadata.get('position','')}", "metadata": r.metadata} for r in results if not (getattr(r, "metadata", {}) or {}).get("is_deleted")]
 
+    
 
     # CRUD document ------------------
     def get_task_by_id(self, task_id: str) -> Optional[Dict[str, Any]]:
@@ -395,7 +412,6 @@ class VectorStoreService:
         except Exception as e:
             log.exception(f"Upsert task {task_id} thất bại: {e}")
             return False
-
 
     def upsert_user(self, user: dict, force: bool = False):
         if not self._ensure_stores() or "id" not in user:

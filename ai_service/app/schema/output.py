@@ -5,13 +5,11 @@ from typing import List, Optional, Dict, Any
 class SubtaskOut(BaseModel):
     title: str
     description: str = ""
-    tags: List[str] = Field(default_factory=list)
     priority: str = "MEDIUM"
 
 class ComposeOut(BaseModel):
     title: str
     description: str = ""
-    tags: List[str] = Field(default_factory=list)
     priority: str = "MEDIUM"
     due_date: Optional[str] = None
     subtasks: List[SubtaskOut] = Field(default_factory=list)

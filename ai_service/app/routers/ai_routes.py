@@ -1,8 +1,6 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, Field
-from typing import Dict, Optional, List
 
 from app.services.llm_service import LLMService
 from app.services.vector_store import VectorStoreService 
@@ -16,8 +14,7 @@ log = logging.getLogger(__name__)
 # Khởi tạo Vector Store instance lúc app khởi động (call instance method)
 vector_store_service = VectorStoreService()
 try:
-    # create_or_update_embeddings is an instance method — call it on the instance
-    vector_store_service.sync_data(force=False)
+    vector_store_service.sync_data(force=False) # Đồng bộ dữ liệu từ DB vào vector store
 except Exception as e:
     log.warning("Vector store embedding initialization failed at startup: %s", e)
     
@@ -342,10 +339,10 @@ async def delete_user_by_id(
 async def test_retrieve_tasks(
     query: str,
     project_id: str = None,
-    llm_svc: LLMService = Depends(get_llm_service)
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service),
 ):
     """Test retrieve tasks from vector store by query + optional project_id"""
-    tasks = llm_svc.test_retrieve_tasks(query=query, project_id=project_id)
+    tasks = vector_store_svc.retrieve_tasks_by_query(query=query, project_id=project_id)
     return {"query": query, "project_id": project_id, "results": tasks}
 
 # Test truy vần user liên quan
@@ -353,10 +350,10 @@ async def test_retrieve_tasks(
 async def test_retrieve_users(
     query: str,
     project_id: str = None,
-    llm_svc: LLMService = Depends(get_llm_service)
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
 ):
     """Test retrieve users from vector store by query + optional project_id"""
-    users = llm_svc.test_retrieve_users(query=query, project_id=project_id)
+    users = vector_store_svc.retrieve_users_by_query(query=query, project_id=project_id)
     return {"query": query, "project_id": project_id, "results": users}
 
 # Test truy vần task kèm score
@@ -364,31 +361,43 @@ async def test_retrieve_users(
 async def test_retrieve_with_scores(
     query: str,
     project_id: str = None,
-    llm_svc: LLMService = Depends(get_llm_service)
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service),
 ):
     """Test retrieve tasks with scores (similarity search)"""
-    results = llm_svc.test_retrieve_with_scores(query=query, project_id=project_id)
+    results = vector_store_svc.retrieve_tasks_with_scores(query=query, project_id=project_id)
     return {"query": query, "project_id": project_id, "results": results}
 
 # Test truy vần task chỉ bằng project_id
 @test_router.get("/retrieve_tasks_by_project")
 async def test_retrieve_task_by_project(
     project_id: str,
-    llm_svc: LLMService = Depends(get_llm_service)
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
 ):
     """Test retrieve tasks from vector store by project_id only"""
-    tasks = llm_svc.test_retrieve_tasks_for_project(project_id=project_id)
+    tasks = vector_store_svc.retrieve_tasks_by_project(project_id=project_id)
     return {"project_id": project_id, "results": tasks}
+   
 
 # Test truy vấn user chỉ bằng project_id
 @test_router.get("/retrieve_users_by_project")
 async def test_retrieve_users_by_project(
     project_id: str,
-    llm_svc: LLMService = Depends(get_llm_service)
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
 ):
     """Test retrieve users from vector store by project_id only"""
-    users = llm_svc.test_retrieve_users_for_project(project_id=project_id, k=20)
+    users = vector_store_svc.retrieve_users_by_project(project_id=project_id)
     return {"project_id": project_id, "results": users}
+
+
+@test_router.get("/retrieve_tasks_by_user")
+async def test_retrieve_task_by_user(
+    user_id: str,
+    project_id: str,
+    vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
+):
+    """Test retrieve tasks assigned to a specific user_id"""
+    tasks = vector_store_svc.retrieve_tasks_by_user(user_id=user_id, project_id=project_id)
+    return {"user_id": user_id, "project_id": project_id, "results": tasks}
 
 # --- Register grouped routers into main router ---
 router.include_router(compose_router)

@@ -3,7 +3,7 @@ import json
 import logging
 import numpy as np  
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 from typing import List, Optional, Dict, Any
 from dotenv import load_dotenv
 from langdetect import detect 
@@ -45,80 +45,81 @@ class LLMService:
     # HÀM TẠO TASK (COMPOSITION) - DÙNG RETRIEVER LẤY NGỮ CẢNH
     def compose_with_llm(self, user_input: str, project_id: Optional[str] = None) -> ComposeOut:
         """
-        Tạo task mới. **Sử dụng Retriever** để lấy 10 task có ngữ nghĩa liên quan nhất 
-        dựa trên user_input làm ngữ cảnh.
+        Tạo task mới. Ngữ cảnh kết hợp 2 cách:
+        1) Các task thuộc project (ngữ cảnh nền)
+        2) Các task liên quan đến truy vấn (nếu có)
+        
         """
         
         lang_name = _detect_language(user_input)
         log.info(f"Phát hiện ngôn ngữ: {lang_name}")
 
-        # 1. Lấy ngữ cảnh bằng Retriever (thực hiện truy vấn trực tiếp)
-        # Lưu ý là lấy các tasks trong dự án hiện tại, chứ không phải là các task liên quan đến query không
-        retrieved_docs = self.vector_store.retrieve_tasks_for_project(
+        # 1. Lấy ngữ cảnh các task thuộc project
+        project_tasks = self.vector_store.retrieve_tasks_by_project(
             k=10,
-            project_id=project_id   # <-- giới hạn theo project nếu được cung cấp
-        )
-        if not retrieved_docs:
-            log.info("Không có tài liệu liên quan.")
-        else: 
-            log.info(f"Đã truy xuất {len(retrieved_docs)} tài liệu liên quan.")
-        
-        # Build a compact context string from retrieved docs
-        context_text = "\n\n".join(
-            [f"- {d.get('metadata', {}).get('title', '')}: {d.get('content', '')}" for d in (retrieved_docs or [])]
-        ) or "Không có ngữ cảnh liên quan."
+            project_id=project_id  
+        ) or  []
+    
+        # 2. Lấy các task liên quan đến truy vấn (nếu có) thuộc cùng dự án
+        semantic_tasks = self.vector_store.retrieve_tasks_by_query(
+            query=user_input,
+            project_id=project_id,     # lọc trong project
+            k= 5
+        ) or []
 
-        # 2. Tạo prompt 
+        log.info(f"Ngữ cảnh dự án: {len(project_tasks)} tasks | Ngữ cảnh mô tả: {len(semantic_tasks)} tasks")
+
+
+        # Build context
+        merged_tasks = merge_context(project_tasks, semantic_tasks)
+        context_text = format_context(merged_tasks)
+
+        # 3. Tạo prompt 
         template = """
-            Bạn là một trợ lý AI chuyên phân tích và chuyển đổi mô tả công việc thành cấu trúc nhiệm vụ chi tiết **dạng JSON**.
+            Bạn là AI hỗ trợ quản lý dự án phần mềm. Hãy tạo nhiệm vụ mới tuân thủ ngữ cảnh dự án.
             
-            Danh sách các nhiệm vụ có liên quan gần nhất của dự án:
+            Ngữ cảnh của dự án (RẤT QUAN TRỌNG):
             {context}
 
-            Dựa vào danh sách liên quan ở trên để hiểu ngữ cảnh dự án (ví dụ: công nghệ đang dùng, tiến độ hiện tại, dự án đang làm về cái gì,...).
-
-            Nội dung mô tả nhiệm vụ mới:
+            Mô tả nhiệm vụ mới của người dùng:
             {user_input}
 
             Yêu cầu đầu ra:
-            - Tạo một nhiệm vụ mới dựa trên **Nội dung mô tả công việc mới** nhưng phải **phù hợp với Ngữ cảnh Liên Quan (Retrieved Context)**.
-            - Viết bằng ngôn ngữ **{lang}** (cho tất cả tiêu đề, mô tả).
-            - Trả về **JSON hợp lệ** (đúng theo cấu trúc mẫu).
-            - Mỗi nhiệm vụ chính có thể có **từ 0 cho đến tối đa 3 subtasks** phù hợp.
-            - Lưu ý: KHÔNG nhất thiết luôn trả về 3 subtasks. Số subtasks có thể là từ 0 đến 3; nếu nhiệm vụ đơn giản thì ưu tiên 0-1 subtasks.
-            - **Chỉ trả về JSON thuần túy**, không kèm lời giải thích, markdown (```json).
+            - Tạo một nhiệm vụ mới dựa trên **Nội dung mô tả công việc mới** nhưng phải **phù hợp với Ngữ cảnh Dự án**.
+            - Viết bằng ngôn ngữ **{lang}**.
+            - Trả về **JSON hợp lệ** (đúng theo cấu trúc) không kèm lời giải thích, markdown (```json).
+            - Subtasks tối đa 3, chỉ tạo khi thực sự cần thiết.
 
             Cấu trúc JSON bắt buộc:
                 {{
                 "title": "string",
-                "description": "string (mô tả chi tiết, ưu tiên theo dạng Given–When–Then nhưng viết dưới dạng Ngôn NGữ Tự Nhiên)",
-                "tags": ["string"],
+                "description": "string (mô tả chi tiết, ưu tiên theo dạng Given–When–Then nhưng viết dưới dạng Ngôn Ngữ Tự Nhiên)",
                 "priority": "HIGH | MEDIUM | LOW",
-                "due_date": "YYYY-MM-DD" (Dự kiến ngày hoàn thành, nếu có),
+                "due_date": "YYYY-MM-DD"(tính từ ngày {date}), 
                 "subtasks": [
                     {{
                     "title": "string",
                     "description": "string (chi tiết)",
-                    "tags": ["string"],
                     "priority": "HIGH | MEDIUM | LOW"
                     }}
                 ]
                 }}
     """
-        prompt = PromptTemplate(template=template, input_variables=["context", "user_input", "lang"])
+        prompt = PromptTemplate(
+            template=template, 
+            input_variables=["context", "user_input", "lang", "date"])
         
         # Tạo chain
-        chain = (
-            prompt | self.llm.with_structured_output(ComposeOut)
-        )
+        chain = ( prompt | self.llm.with_structured_output(ComposeOut))
 
-        # 3. Invoke LLM và Xử lý Kết quả
+        # 4. Invoke LLM và Xử lý Kết quả
         response = ""
         try:
             response = chain.invoke({
                 "context": context_text,
                 "user_input": user_input, 
-                "lang": lang_name
+                "lang": lang_name,
+                "date": date.today().isoformat(),
             })
 
             # Response is always: {"raw": AIMessage, "parsed": ComposeOut, "parsing_error": None/error}
@@ -132,7 +133,7 @@ class LLMService:
     # HÀM GỢI Ý GÁN NGƯỜI THỰC HIỆN (ASSIGNMENT) 
     def assign_candidate(self, task: dict, project_id: str, requirement_text: Optional[str] = None) -> Dict[str, Any]:
         """
-        Gán người dùng phù hợp, sử dụng PydanticOutputParser để đảm bảo cấu trúc.
+        Gợi ý gán người dùng phù hợp,
         Hàm này tự động lấy dữ liệu từ Vector Store.
         """
         lang_name = _detect_language(requirement_text)
@@ -142,62 +143,69 @@ class LLMService:
             return {"error": "Missing project_id in task data."}
 
         try:
-            # Lấy dữ liệu ngữ cảnh từ Vector Store
-            retrieve_context = RunnableParallel(
-            users=RunnableLambda(
-                lambda _: self.vector_store.retrieve_users_for_project(
-                    project_id=project_id, k=10
+            # Lấy user theo requirement (nếu có). Các user này phải tham gia project (Hiện tại chưa có)
+            related_users = []
+            if requirement_text:
+                related_users = self.vector_store.retrieve_users_by_query(
+                    task_text=requirement_text,
+                    project_id=project_id,
+                    k=4
+                ) or []
+            else:
+                related_users = self.vector_store.retrieve_users_by_project(
+                    project_id=project_id,
+                    k=4
+                ) or []
+
+            tasks_docs = []
+            for user in related_users:
+                user_id = user["metadata"].get("user_id")
+                log.info(f"Lấy lịch sử task của user_id={user_id}")
+                t = self.vector_store.retrieve_tasks_by_user(
+                    user_id=user_id,
+                    project_id=project_id,
+                    k=4
                 )
-            ),
-            tasks=RunnableLambda(
-                lambda _: self.vector_store.retrieve_tasks_for_project(
-                    project_id=project_id, k=10
-                    )
-                )
-            )
-            context = retrieve_context.invoke(None)
-            users_docs = context["users"]
-            tasks_docs = context["tasks"]
+                log.info(f"Tìm thấy {len(t)} tasks cho user_id={user_id}")
+                tasks_docs.extend(t)
             
-            if not users_docs:
-                log.warning(f"Không tìm thấy user cho project {project_id}")
-                return {"error": f"Không có user trong project: {project_id}"}
-            
-            log.info(f"Đã truy xuất {len(users_docs)} users, {len(tasks_docs)} tasks")
+            log.info(f"Đã truy xuất {len(related_users)} users liên quan và {len(tasks_docs)} tasks liên quan tương ứng.")
+
 
             # Template và Prompt (không đổi)
             template = """
-                    Bạn là một AI có nhiệm vụ phân công người thực hiện phù hợp nhất cho một nhiệm vụ. Bạn nhận vào các dữ liệu sau:
-                    - task: là Mô tả nhiệm vụ cần phân công.
-                    - users: là Danh sách chứa các thành viên tiềm năng.
-                    - tasks: là Danh sách chứa lịch sử các nhiệm vụ đã/đang thực hiện (để tính tải công việc).
+                    Bạn là một AI có nhiệm vụ phân công người thực hiện phù hợp nhất cho một nhiệm vụ. 
+                    Đầu vào:
+                    - task: mô tả nhiệm vụ cần phân công.
+                    - users: danh sách ứng viên liên quan (đã lọc theo yêu cầu và thuộc dự án)
+                    - tasks:  lịch sử nhiệm vụ của các ứng viên (để tính tải công việc và thành tích)
+                    - requirement: yêu cầu bổ sung (nếu có)
 
-                    Yêu cầu phân công bổ sung: {requirement}
+                    Tiêu chí chọn 1 ứng viên phù hợp:
+                    1) Khớp vị trí/chuyên môn với nội dung task.
+                    2) Tải công việc (ưu tiên người có ít nhiệm vụ TODO/IN_PROGRESS).
+                    3) Thành tích (ưu tiên người có nhiều nhiệm vụ DONE).
+                    4) Kinh nghiệm (năm làm việc — dùng khi điểm bằng nhau).
 
-                    Hướng dẫn:
-                    - Chọn thành viên phù hợp nhất từ danh sách 'users' dựa trên các tiêu chí sau:
-                      1) **Mức độ phù hợp vị trí** (role/position khớp với tags/mô tả nhiệm vụ).
-                      2) **Tải công việc hiện tại** (số lượng nhiệm vụ TODO/IN_PROGRESS được giao; ưu tiên tải nhẹ, tránh người có >4 task đang hoạt động trừ khi họ có thành tích DONE vượt trội).
-                      3) **Năng lực đã chứng minh** (số lượng nhiệm vụ DONE hoàn thành).
-                      4) **Số năm kinh nghiệm (yearOfExperience)** (dùng làm yếu tố phá vỡ sự đồng đều).
-                    - Trả về **CHỈ MỘT** đối tượng JSON thuần túy (không giải thích bên ngoài JSON) với cấu trúc sau:
-                      {{
-                            "assignee": {{
-                                "id": "string (original_id)",
-                                "email": "string",
-                                "name": "string",
-                                "position": "string"
+                    Yêu cầu trả về:
+                    JSON DUY NHẤT, đúng cấu trúc:
+                    {{
+                        "assignee": {{
+                            "id": "",
+                            "email": "",
+                            "name": "",
+                            "position": ""
                             }},
-                            "reason": "string"
-                        }}
-                        "reason": "string (lời giải thích ngắn gọn, liệt kê tải công việc, số task đã DONE, kinh nghiệm, và mức độ phù hợp vị trí **bằng ngôn ngữ Tiếng Việt**)"
-                      }}
-                    - Sử dụng chính xác dữ liệu được cung cấp (task/users/tasks) để tính toán, không tự thêm thông tin bên ngoài.
+                        "reason": "Giải thích ngắn bằng tiếng Việt: vì sao phù hợp, tải công việc, thành tích DONE, kinh nghiệm."
+                    }}
 
-                    Dữ liệu ngữ cảnh (chỉ để tham khảo):
+                    Không trả lời ngoài JSON.
+
+                    Dữ liệu ngữ cảnh:
                     task: {task}
                     users: {users}
                     tasks: {tasks}
+                    requirement: {requirement}
                     """
             prompt = PromptTemplate(template=template, input_variables=["task", "users", "tasks", "requirement", "lang"])
             
@@ -207,7 +215,7 @@ class LLMService:
 
             assignment = chain.invoke({
                 "task": json.dumps(task, ensure_ascii=False),
-                "users": json.dumps(users_docs, ensure_ascii=False),
+                "users": json.dumps(related_users, ensure_ascii=False),
                 "tasks": json.dumps(tasks_docs, ensure_ascii=False),
                 "requirement": requirement_text or "None",
                 "lang": lang_name
@@ -216,7 +224,7 @@ class LLMService:
             log.info(f"Assignment successful: {assignment.assignee.name}")
 
             related_users = (
-                self.vector_store.retrieve_users_for_query(requirement_text, k=5)
+                self.vector_store.retrieve_users_by_query(requirement_text, k=5)
                 if requirement_text
                 else []
             )
@@ -575,57 +583,6 @@ class LLMService:
 
 
 
-    # -------------------- DEBUG / TESTING --------------------
-    def test_retrieve_tasks(self, query: str, project_id: Optional[str] = None, k: int = 5):
-        """
-        Test retrieve tasks từ vector store theo project_id
-        """
-        tasks = self.vector_store.retrieve_tasks_for_query(query=query, k=k, project_id=project_id)
-        print(f"Retrieved {len(tasks)} task(s) for project_id={project_id}")
-        for t in tasks:
-            print(f"- {t['metadata'].get('title')} | projectId={t['metadata'].get('projectId')}")
-        return tasks
-
-    def test_retrieve_users(self, query: str, project_id: Optional[str] = None, k: int = 5):
-        """
-        Test retrieve users từ vector store theo project_id
-        """
-        users = self.vector_store.retrieve_users_for_query(task_text=query, k=k, project_id=project_id)
-        print(f"Retrieved {len(users)} user(s) for project_id={project_id}")
-        for u in users:
-            print(f"- {u['metadata'].get('name')} | projectId={u['metadata'].get('projectId')}")
-        return users
-
-    def test_retrieve_with_scores(self, query: str, project_id: Optional[str] = None, k: int = 5):
-        """
-        Test similarity_search_with_score và filter theo project_id
-        """
-        results = self.vector_store.retrieve_tasks_with_scores(query=query, k=k, project_id=project_id)
-        print(f"Retrieved {len(results)} task(s) with scores for project_id={project_id}")
-        for r in results:
-            print(f"- {r['metadata'].get('title')} | score={r['score']} | projectId={r['metadata'].get('projectId')}")
-        return results
-    
-    def test_retrieve_tasks_for_project(self, project_id: str, k: int = 5):
-        """
-        Test retrieve tasks chỉ theo project_id
-        """
-        tasks = self.vector_store.retrieve_tasks_for_project(k=k, project_id=project_id)
-        print(f"Retrieved {len(tasks)} task(s) for project_id={project_id}")
-        for t in tasks:
-            print(f"- {t['metadata'].get('title')} | projectId={t['metadata'].get('projectId')}")
-        return tasks
-
-    def test_retrieve_users_for_project(self, project_id: str, k: int = 5):
-        """
-        Test retrieve users chỉ theo project_id
-        """
-        users = self.vector_store.retrieve_users_for_project(k=k, project_id=project_id)
-        print(f"Retrieved {len(users)} user(s) for project_id={project_id}")
-        for u in users:
-            print(f"- {u['metadata'].get('name')} | projectId={u['metadata'].get('projectId')}")
-        return users
-    
 
 # ---------------------UTILS HỖ TRỢ---------------------
 
@@ -637,6 +594,37 @@ def _detect_language(text: str) -> str:
         return "Vietnamese" if lang_code.startswith("vi") else "English"
     except Exception:
         return "English"
+    
+
+# Hàm định dạng context cho mỗi task
+def format_context(tasks):
+    if not tasks:
+        return "Không có ngữ cảnh liên quan."
+    
+    return "\n".join([
+        f"- {t.get('metadata', {}).get('title', '')}: {t.get('content','')}"
+        for t in tasks
+    ])
+
+
+# Hàm loại bỏ trùng lặp trong danh sách task
+def dedupe_tasks(tasks):
+    seen = set()
+    out = []
+    for t in tasks:
+        tid = t.get("metadata", {}).get("task_id")
+        if tid not in seen:
+            seen.add(tid)
+            out.append(t)
+    return out
+
+# Hàm gộp ngữ cảnh từ project tasks và semantic tasks
+def merge_context(project_tasks, semantic_tasks):
+    # Ưu tiên semantic trước
+    merged = semantic_tasks + project_tasks
+    return dedupe_tasks(merged)
+
+
 
 
 # Hàm hỗ trợ build doc từ task object để truyền vào estimate
