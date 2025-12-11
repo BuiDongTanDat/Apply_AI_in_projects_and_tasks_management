@@ -1,5 +1,5 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import ChatOllama
 import joblib
 from pathlib import Path
 from dotenv import load_dotenv
@@ -21,26 +21,28 @@ class ModelsLoader:
         if ModelsLoader._llm is not None:
             return ModelsLoader._llm
 
-        api_key = config.GEMINI_API_KEY or os.getenv("GOOGLE_API_KEY", "")
+        # api_key = config.GEMINI_API_KEY or os.getenv("GOOGLE_API_KEY", "")
 
-        if not api_key:
-            print("[ModelsLoader] Gemini disabled — missing GOOGLE_API_KEY")
-            ModelsLoader._llm = None
-            return None
+        # if not api_key:
+        #     print("[ModelsLoader] Gemini disabled — missing GOOGLE_API_KEY")
+        #     ModelsLoader._llm = None
+        #     return None
 
-        model_name = (
-            config.GEMINI_MODEL_GENERIC
-            or "gemini-2.5-flash"
-        )
+        # model_name = (
+        #     config.GEMINI_MODEL_GENERIC
+        #     or "gemini-2.5-flash"
+        # )
 
-        print(f"[ModelsLoader] Gemini enabled — model: {model_name}")
+        # print(f"[ModelsLoader] Gemini enabled — model: {model_name}")
 
-        ModelsLoader._llm = ChatGoogleGenerativeAI(
-            model=model_name,
-            temperature=0.7,
-            max_tokens=None,
+        ModelsLoader._llm = ChatOllama(
+            model=os.getenv("OLLAMA_MODEL", "llama3.1:8B"),
+            base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+            temperature=0.5,
             max_retries=2,
         )
+
+        print(f"[ModelsLoader] Đã load model LLM từ Ollama: {os.getenv('OLLAMA_MODEL', 'llama3.1:8B')}")
 
         return ModelsLoader._llm
 

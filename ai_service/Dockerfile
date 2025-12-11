@@ -3,6 +3,8 @@ FROM python:3.11.2-slim-bullseye
 
 WORKDIR /app
 
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
 # Chỉ sao chép tệp requirements.txt trước
 COPY requirements.txt .
 

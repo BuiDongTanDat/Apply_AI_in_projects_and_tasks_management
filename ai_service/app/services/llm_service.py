@@ -196,7 +196,7 @@ class LLMService:
                             "name": "",
                             "position": ""
                             }},
-                        "reason": "Giải thích ngắn bằng tiếng Việt: vì sao phù hợp, tải công việc, thành tích DONE, kinh nghiệm."
+                        "reason": "Giải thích ngắn bằng tiếng Vietnamese: lý do vì sao phù hợp dựa trên tải công việc, thành tích DONE, kinh nghiệm."
                     }}
 
                     Không trả lời ngoài JSON.
