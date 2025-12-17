@@ -1,9 +1,12 @@
 # ĐÁNH GIÁ CÁC MÔ HÌNH
 
+## Note
+* Các mô hình được huấn luyện trên tập dữ liệu các issue trong các dự án lớn được đăng công khai trên các nguồn Apache, Jira, Atlassian. Do dữ liệu lấy thủ công được còn giới hạn, chúng tôi đã bổ sung thêm bằng tập dữ liệu TAWOS có sẵn. 
+* Để tránh bị crack session, tôi đã tách các file train mô hình riêng biệt.
+* File [Add ID][MiniL12]Train_Models.ipynb: Các mô hình đã được train lại đầy đủ trong cùng một file.
+* Dữ liệu các đặc trưng chưa phải là dữ liệu cuối cùng, kết quả đánh giá chỉ mang tính chất tham khảo.
 
 ## Bảng đánh giá hiệu suất mô hình
-Các mô hình được huấn luyện trên tập dữ liệu các issue trong các dự án lớn được đăng công khai trên các nguồn Apache, Jira, Atlassian. Do dữ liệu lấy thủ công được còn giới hạn, chúng tôi đã bổ sung thêm bằng tập dữ liệu TAWOS có sẵn. 
-
 Mỗi dòng dữ liệu gồm các đặc trứng chính: Key dự án, Title + Description (combined_text) và story point. Bộ dữ liệu gồm ~ 90000 dòng bao gồm cả tiếng Anh và tiếng Việt.
 | Model | Embedding Model | MAE | MSE | RMSE | R² |
 |:---:|:--:|:--:|:--:|:--:|:--:|
