@@ -1,15 +1,21 @@
 # ĐÁNH GIÁ CÁC MÔ HÌNH
 
+
 ## Bảng đánh giá hiệu suất mô hình
 Các mô hình được huấn luyện trên tập dữ liệu các issue trong các dự án lớn được đăng công khai trên các nguồn Apache, Jira, Atlassian. Do dữ liệu lấy thủ công được còn giới hạn, chúng tôi đã bổ sung thêm bằng tập dữ liệu TAWOS có sẵn. 
 
 Mỗi dòng dữ liệu gồm các đặc trứng chính: Key dự án, Title + Description (combined_text) và story point. Bộ dữ liệu gồm ~ 90000 dòng bao gồm cả tiếng Anh và tiếng Việt.
-|Model|Embedding Model|Mean Absolute Error (MAE) |Mean Square Error (MSE)| Root Mean Square Error (RMSE)|R-squared (R^2)|
+| Model | Embedding Model | MAE | MSE | RMSE | R² |
 |:---:|:--:|:--:|:--:|:--:|:--:|
-|XGBoostRegressor|paraphrase-multilingual-MiniLM-L12-v2|1.1615|2.6034|1.6135|0.5517|
-|XGBoostRegressor|paraphrase-multilingual-mpnet-base-v2|1.1052|2.4207|1.5558|0.5831|
-|LightGBMRegressor|paraphrase-multilingual-MiniLM-L12-v2|1.3510|3.2147|1.7930|0.4464|
-|LightGBMRegressor|paraphrase-multilingual-mpnet-base-v2|1.2965|3.0042|1.7333|0.4826|
+| XGBoostRegressor | paraphrase-multilingual-MiniLM-L12-v2 | 1.1615 | 2.6034 | 1.6135 | 0.5517 |
+| LightGBMRegressor | paraphrase-multilingual-MiniLM-L12-v2 | 1.3510 | 3.2147 | 1.7930 | 0.4464 |
+| CatBoostRegressor | paraphrase-multilingual-MiniLM-L12-v2 | 1.3167 | 3.0773 | 1.7542 | 0.4701 |
+| RandomForestRegressor | paraphrase-multilingual-MiniLM-L12-v2 | 1.5596 | 4.1192 | 2.0296 | 0.2906 |
+| DecisionTreeRegressor | paraphrase-multilingual-MiniLM-L12-v2 | 1.6668 | 5.0063 | 2.2375 | 0.1378 |
+| XGBoostRegressor | paraphrase-multilingual-mpnet-base-v2 | 1.1052 | 2.4207 | 1.5558 | 0.5831 |
+| LightGBMRegressor | paraphrase-multilingual-mpnet-base-v2 | 1.2965 | 3.0042 | 1.7333 | 0.4826 |
+
+
 
 ## Thời gian Embedding
 |Embedding Model| Embedding time| Dense|
