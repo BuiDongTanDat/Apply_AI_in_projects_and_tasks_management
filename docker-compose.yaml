@@ -22,8 +22,6 @@ services:
     build: 
       context: ./ai_service
       dockerfile: Dockerfile
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434 # Kết nối đến Ollama service bên trong mạng Docker 
     command: uvicorn app.main:app --reload --port ${PORT:-8000} --host 0.0.0.0
     env_file:
       - ./ai_service/.env
@@ -34,19 +32,3 @@ services:
       - ./ai_service:/app
     depends_on: # Đảm bảo service db khởi động trước ai-service
       - vector-db
-      - ollama
-  
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      # Map mô hình Ollama để lưu mô hình đã pull
-      - ./ollama_models:/root/.ollama
-      # Map script pull_model.sh để tự động pull model khi container khởi động
-      - ./pull_model.sh:/pull_model.sh
-    environment:
-      - OLLAMA_MODEL=gemma3:1b            #llama3.2:3B       #llama3.1:8B
-    entrypoint: ["/bin/bash", "/pull_model.sh"]
-    restart: unless-stopped

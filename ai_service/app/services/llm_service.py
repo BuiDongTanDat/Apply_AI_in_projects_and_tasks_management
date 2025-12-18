@@ -8,6 +8,7 @@ from typing import List, Optional, Dict, Any
 from dotenv import load_dotenv
 from langdetect import detect 
 from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.runnables import  RunnablePassthrough, RunnableLambda, RunnableParallel
 from app.services.vector_store import VectorStoreService
 from app.schema.output import *
@@ -30,14 +31,7 @@ class LLMService:
         self.embed_model = ModelsLoader.embeddings()
         self.xgb_model = ModelsLoader.xgb_model()
         self.scaler = ModelsLoader.scaler()
-
-        # Vector Store
-        if vector_store is None:
-            self.vector_store = VectorStoreService(
-                embedding_model=self.embed_model
-            )
-        else:
-            self.vector_store = vector_store
+        self.vector_store = vector_store or VectorStoreService()
 
         # LLM enabled flag
         self.enabled = self.llm is not None
@@ -93,7 +87,7 @@ class LLMService:
             Cấu trúc JSON bắt buộc:
                 {{
                 "title": "string",
-                "description": "string (mô tả chi tiết, ưu tiên theo dạng Given–When–Then nhưng viết dưới dạng Ngôn Ngữ Tự Nhiên)",
+                "description": "string (mô tả chi tiết, ưu tiên theo dạng Given–When–Then nhưng viết dưới dạng Ngôn Ngữ Tự Nhiên, KHÔNG kèm theo các chữ Given, When, Then)",
                 "priority": "HIGH | MEDIUM | LOW",
                 "due_date": "YYYY-MM-DD"(tính từ ngày {date}), 
                 "subtasks": [
@@ -110,7 +104,7 @@ class LLMService:
             input_variables=["context", "user_input", "lang", "date"])
         
         # Tạo chain
-        chain = ( prompt | self.llm.with_structured_output(ComposeOut))
+        chain = ( prompt | self.llm | PydanticOutputParser(pydantic_object=ComposeOut) )
 
         # 4. Invoke LLM và Xử lý Kết quả
         response = ""
@@ -210,7 +204,7 @@ class LLMService:
             prompt = PromptTemplate(template=template, input_variables=["task", "users", "tasks", "requirement", "lang"])
             
 
-            chain = prompt | self.llm.with_structured_output(AssignOut)
+            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=AssignOut)
             
 
             assignment = chain.invoke({
@@ -223,11 +217,6 @@ class LLMService:
             print (assignment)
             log.info(f"Assignment successful: {assignment.assignee.name}")
 
-            related_users = (
-                self.vector_store.retrieve_users_by_query(requirement_text, k=5)
-                if requirement_text
-                else []
-            )
             # Return structured response
             return {
                 "assignment": assignment.model_dump(),  # Already a dict from Pydantic

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 
-
+#alias thể hiện tên trường trong JSON khi nhận request: requirement(JSON) -> requirement_text(thuộc tính trong class)
 #Request body
 class ComposeRequest(BaseModel):
     user_input: Optional[str] = Field("", alias="user_input")
@@ -46,7 +46,11 @@ class GenerateTaskRequest(BaseModel):
         allow_population_by_field_name = True
         extra = "allow"
 
+class ChatRequest(BaseModel):
+    question: str
+    session_id: str = "default"
 
+    
 class UpdateTaskRequest(BaseModel):
     id: str = Field(..., description="User ID phải có")
     title: Optional[str] = Field(None, alias="title")

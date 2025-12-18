@@ -7,12 +7,17 @@ from langchain_postgres import PGVector
 from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStoreRetriever
 from app.services.models_loader import ModelsLoader
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 USERS_FILE = "./app/data/users.json"
 TASKS_FILE = "./app/data/tasks.json"
+GUIDES_FOLDER = "./app/data/guides" # Thư mục chứa các file PDF hướng dẫn sử dụng
+
+
 
 
 USER_SKILLS = {
@@ -107,15 +112,19 @@ class VectorStoreService:
         # Vector stores bắt đầu là None và sẽ được tạo khi cần thiết
         self.users_store: Optional[PGVector] = None
         self.tasks_store: Optional[PGVector] = None
+        self.guides_store: Optional[PGVector] = None
 
         # Test với file JSON
         self.users_file = USERS_FILE
         self.tasks_file = TASKS_FILE
+        self.guides_folder = GUIDES_FOLDER
 
         if not self.connection:
             log.warning("DB_CONNECTION_STRING missing. Vector stores disabled.")
         else:
             self._init_stores()
+
+        self.sync_data(force=False)
     
     def _init_stores(self):
         """Initialize PGVector instances."""
@@ -132,6 +141,15 @@ class VectorStoreService:
                 connection=self.connection,
                 use_jsonb=True,
             )
+
+            self.guides_store = PGVector(
+                embeddings=self.embedding_adapter,
+                collection_name="guides",
+                connection=self.connection,
+                use_jsonb=True,
+            )
+
+
             log.info("PGVector stores initialized successfully.")
         except Exception as e:
             log.exception(f"Failed to initialize PGVector: {e}")
@@ -156,6 +174,70 @@ class VectorStoreService:
             return []
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
+
+    # Load và xử lý file PDF hướng dẫn
+    def _load_guides(self) -> List[Document]:
+        """Load PDF từ thư mục hoặc file, loại bỏ ký tự NUL, split thành chunks và gắn metadata."""
+        
+        if not os.path.exists(self.guides_folder):
+            log.warning(f"Không tìm thấy: {self.guides_folder}")
+            return []
+
+        documents = []
+
+        try:
+            # Trường hợp guides_folder là thư mục
+            if os.path.isdir(self.guides_folder):
+                pdf_files = [f for f in os.listdir(self.guides_folder) if f.endswith('.pdf')]
+                for file in pdf_files:
+                    loader = PyPDFLoader(os.path.join(self.guides_folder, file))
+                    docs = loader.load()
+                    # Loại bỏ ký tự NUL
+                    for d in docs:
+                        d.page_content = d.page_content.replace('\x00', '')
+                    documents.extend(docs)
+
+            # Trường hợp guides_folder là 1 file PDF
+            elif self.guides_folder.endswith('.pdf'):
+                loader = PyPDFLoader(self.guides_folder)
+                docs = loader.load()
+                for d in docs:
+                    d.page_content = d.page_content.replace('\x00', '')
+                documents.extend(docs)
+
+            if not documents:
+                return []
+
+            # Split văn bản
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000,
+                chunk_overlap=200,
+                length_function=len,
+                separators=["\n\n", "\n", " ", ""]
+            )
+            splits = text_splitter.split_documents(documents)
+
+            # Loại bỏ các chunk rỗng
+            safe_splits = []
+            for doc in splits:
+                if not doc.page_content.strip():
+                    continue
+                source = doc.metadata.get("source") or "unknown.pdf"
+                doc.metadata["type"] = "guide"
+                doc.metadata["file_name"] = os.path.basename(source)
+                # Id cố định: file name + index trong file
+                idx = len([d for d in safe_splits if d.metadata["file_name"] == os.path.basename(source)])
+                doc.id = f"{os.path.basename(source)}_{idx}"
+                safe_splits.append(doc)
+
+
+            log.info(f"Đã tạo {len(safe_splits)} guide chunks từ PDF.")
+            return safe_splits
+
+        except Exception as e:
+            log.error(f"Error processing PDFs: {str(e)}")
+            return []
+        
 
     def sync_data(self, force: bool = False):
         if not self._ensure_stores():
@@ -194,12 +276,30 @@ class VectorStoreService:
                 store.add_documents(task_docs)
                 log.info(f"Synced {len(task_docs)} parent tasks.")
 
+        # Sync Guides from PDFs
+        if not self.guides_store:
+            return
+
+        guide_docs = self._load_guides()
+        if not guide_docs:
+            return
+
+        # Lấy danh sách id đã tồn tại trong store
+        existing_ids = set(d.id for d in self.guides_store.get_by_ids([doc.id for doc in guide_docs]))
+        to_add = [doc for doc in guide_docs if doc.id not in existing_ids]
+
+        if to_add:
+            self.guides_store.add_documents(to_add)
+            log.info(f"Synced {len(to_add)} guide documents from PDFs (không trùng).")
+        else:
+            log.info("Không có guide documents mới để sync.")
+
 
 
     # TRUY VẤN ------------------
     def users_retriever(self, k: int = 5, filters: Optional[dict] = None) -> VectorStoreRetriever:
         """Trả về một LangChain Retriever object cho Users."""
-        store = self._ensure_store("user")
+        store = self.users_store
         if not store:
             raise ValueError("User Store not initialized")
         
@@ -210,7 +310,7 @@ class VectorStoreService:
 
     def tasks_retriever(self, k: int = 5, project_id: Optional[str] = None) -> VectorStoreRetriever:
         """Trả về một LangChain Retriever object cho Tasks."""
-        store = self._ensure_store("task")
+        store = self.tasks_store
         if not store:
             raise ValueError("Task Store not initialized")
         
@@ -223,6 +323,18 @@ class VectorStoreService:
             search_kwargs=search_kwargs
         )
     
+    def guides_retriever(self, k: int = 5) -> VectorStoreRetriever:
+        """Trả về một LangChain Retriever object cho Guides."""
+        store = self.guides_store
+        if not store:
+            raise ValueError("Guide Store not initialized")
+        
+        return store.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": k}
+        )
+    
+
     # Hàm tìm kiếm task liên quan 
     def retrieve_tasks_by_query(self, query: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
         if not self.tasks_store:
@@ -358,7 +470,6 @@ class VectorStoreService:
             return []
         return [{"content": f"Tên: {r.page_content}. Vị trí: {r.metadata.get('position','')}", "metadata": r.metadata} for r in results if not (getattr(r, "metadata", {}) or {}).get("is_deleted")]
 
-    
 
     # CRUD document ------------------
     def get_task_by_id(self, task_id: str) -> Optional[Dict[str, Any]]:

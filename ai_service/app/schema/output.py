@@ -58,3 +58,5 @@ class SprintSummary(BaseModel):
     summary: str
     metrics: SprintMetrics
     recommendations: Optional[str] = ""
+
+

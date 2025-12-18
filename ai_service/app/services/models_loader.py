@@ -1,9 +1,8 @@
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 import joblib
 from pathlib import Path
 from dotenv import load_dotenv
-import app.config as config
 import os
 
 #Load environment variables
@@ -21,39 +20,31 @@ class ModelsLoader:
         if ModelsLoader._llm is not None:
             return ModelsLoader._llm
 
-        # api_key = config.GEMINI_API_KEY or os.getenv("GOOGLE_API_KEY", "")
-
-        # if not api_key:
-        #     print("[ModelsLoader] Gemini disabled — missing GOOGLE_API_KEY")
-        #     ModelsLoader._llm = None
-        #     return None
-
-        # model_name = (
-        #     config.GEMINI_MODEL_GENERIC
-        #     or "gemini-2.5-flash"
-        # )
-
-        # print(f"[ModelsLoader] Gemini enabled — model: {model_name}")
-
-        ModelsLoader._llm = ChatOllama(
-            model=os.getenv("OLLAMA_MODEL", "llama3.1:8B"),
-            base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
-            temperature=0.5,
+        model_name = os.getenv("GROQ_MODEL_NAME", "deepseek-r1-distill-llama-70b") # Currently use openai/gpt-oss-120b
+        ModelsLoader._llm = ChatGroq(
+            model_name=model_name,
+            api_key=os.getenv("GROQ_API_KEY"),
+            temperature=0,
+            max_tokens=None,
+            reasoning_format="parsed",
+            timeout=None,
             max_retries=2,
         )
 
-        print(f"[ModelsLoader] Đã load model LLM từ Ollama: {os.getenv('OLLAMA_MODEL', 'llama3.1:8B')}")
 
+        print("[ModelsLoader] Đã load model LLM Groq: ", model_name)
         return ModelsLoader._llm
 
+    
     @staticmethod
     def embeddings():
         if ModelsLoader._emb is None:
+            print("[ModelsLoader] Đang load model Embeddings...")
             ModelsLoader._emb = HuggingFaceEmbeddings(
                 model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
                 model_kwargs={"device": "cpu"},
             )
-        print("[ModelsLoader] Đã load model Embedding")
+        
         return ModelsLoader._emb
 
     @staticmethod
