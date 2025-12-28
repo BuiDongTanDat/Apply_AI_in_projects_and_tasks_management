@@ -35,7 +35,7 @@ async def test_retrieve_users(
     vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
 ):
     """Test retrieve users from vector store by query + optional project_id"""
-    users = vector_store_svc.retrieve_users_by_query(query=query, project_id=project_id)
+    users = vector_store_svc.retrieve_users_by_query(task_text=query, project_id=project_id)
     return {"query": query, "project_id": project_id, "results": users}
 
 # Test truy vần task kèm score
