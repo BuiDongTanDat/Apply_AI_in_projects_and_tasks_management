@@ -48,7 +48,7 @@ async def compose_task(
 @compose_router.post("/compose_with_files")
 async def compose_task_with_files(
     user_input: str = Form(...),
-    project_id: str = Form(None),
+    project_id: int = Form(None),
     files: list[UploadFile] = File(None),
     llm_svc: LLMService = Depends(get_llm_service) 
 ):
@@ -241,7 +241,7 @@ async def generate_task(
 @compose_router.post("/generate_task_with_files")
 async def generate_task_with_files(
     user_input: str = Form(...),
-    project_id: str = Form(None),
+    project_id: int = Form(None),
     requirement_text: str = Form(""),
     files: list[UploadFile] = File(None),
     llm_svc: LLMService = Depends(get_llm_service)

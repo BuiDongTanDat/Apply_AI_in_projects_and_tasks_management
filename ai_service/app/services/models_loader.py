@@ -5,6 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 
+
 #Load environment variables
 load_dotenv()
 
@@ -47,12 +48,21 @@ class ModelsLoader:
         
         return ModelsLoader._emb
 
+
     @staticmethod
     def xgb_model():
         if ModelsLoader._xgb is None:
-            model_dir = Path(__file__).resolve().parent.parent / "models"
-            ModelsLoader._xgb = joblib.load(model_dir / "xgb_storypoint.pkl")
-        print("[ModelsLoader] Đã load model XGB")
+            #Local import tránh import vòng lặp
+            from app.services.xgb_service import XGBService
+            # Khởi tạo XGBService chỉ để lấy version model mới nhất
+            db_conn = os.getenv("DB_CONNECT_STRING")
+            xgb_service = XGBService(connection_string=db_conn)
+            model_path = xgb_service.get_latest_xgb_model_path()
+            if not model_path:
+                model_dir = Path(__file__).resolve().parent.parent / "models"
+                model_path = str(model_dir / "xgb_storypoint.pkl")
+            ModelsLoader._xgb = joblib.load(model_path)
+            print("[ModelsLoader] Đã load model XGB: ", model_path)
         return ModelsLoader._xgb
 
     @staticmethod

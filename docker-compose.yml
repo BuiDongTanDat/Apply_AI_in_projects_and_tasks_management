@@ -1,6 +1,4 @@
-
 services:
-
   # Database lưu vector embeddings and metadata
   vector-db:
     image: pgvector/pgvector:pg16
@@ -19,7 +17,7 @@ services:
 
   # AI Service sử dụng FastAPI
   ai-service:
-    build: 
+    build:
       context: ./ai_service
       dockerfile: Dockerfile
     command: uvicorn app.main:app --reload --port ${PORT:-8000} --host 0.0.0.0

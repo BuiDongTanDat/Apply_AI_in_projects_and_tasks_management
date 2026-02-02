@@ -2,6 +2,9 @@ import os
 import json
 import logging
 from typing import List, Dict, Any, Optional
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 
 from langchain_postgres import PGVector
 from langchain_core.documents import Document
@@ -9,14 +12,31 @@ from langchain_core.vectorstores import VectorStoreRetriever
 from app.services.models_loader import ModelsLoader
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from app.service.fetch_data import FetchData #Sẽ dùng sau khi đã có dữ liệu thật
+from app.services.fetch_data import FetchData #Sẽ dùng sau khi đã có dữ liệu thật
 
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+# ID Prefixes để tránh xung đột giữa các collection (Do các id là số tự nhiên từ 0,1,2,3...)
+USER_PREFIX = "user_"
+TASK_PREFIX = "task_"
+PROJECT_PREFIX = "project_"
+
+def make_user_id(user_id: int) -> str:
+    """Chuyển đổi user_id số thành string có tiền tố."""
+    return f"{USER_PREFIX}{user_id}"
+
+def make_task_id(task_id: int) -> str:
+    """Chuyển đổi task_id số thành string có tiền tố."""
+    return f"{TASK_PREFIX}{task_id}"
+
+def make_project_id(project_id: int) -> str:
+    """Chuyển đổi project_id số thành string có tiền tố."""
+    return f"{PROJECT_PREFIX}{project_id}"
+
 USERS_FILE = "./app/data/users.json"
-TASKS_FILE = "./app/data/tasks.json"
+TASKS_FILE = "./app/data/tasks_numeric.json"
 PROJECTS_FILE = "./app/data/projects.json"  # Thêm đường dẫn file projects
 GUIDES_FOLDER = "./app/data/guides" # Thư mục chứa các file PDF hướng dẫn sử dụng
 USER_SKILLS = {
@@ -63,7 +83,7 @@ def create_user_document(user):
         "created_at": user.get("createdAt"),
         "type": "user"
     }
-    return Document(page_content=text_content, metadata=metadata, id=str(user["id"]))
+    return Document(page_content=text_content, metadata=metadata, id=make_user_id(user["id"]))
 
 def create_task_document(task):
     subtasks_text = "Không có subtasks."
@@ -98,7 +118,7 @@ def create_task_document(task):
         "is_deleted": False,
         "type": "task" # Type này là phân biệt giữa user/task/guide trong cùng một vector store
     }
-    return Document(page_content=text_content, metadata=metadata, id=str(task["id"]))
+    return Document(page_content=text_content, metadata=metadata, id=make_task_id(task["id"]))
 
 def create_project_document(project):
     text_content = (
@@ -127,7 +147,7 @@ def create_project_document(project):
         "updated_at": project.get("updatedAt"),
         "type": "project"
     }
-    return Document(page_content=text_content, metadata=metadata, id=str(project["id"]))
+    return Document(page_content=text_content, metadata=metadata, id=make_project_id(project["id"]))
 
 
 
@@ -366,7 +386,7 @@ class VectorStoreService:
             search_kwargs={"k": k, "filter": filters}
         )
 
-    def tasks_retriever(self, k: int = 5, project_id: Optional[str] = None) -> VectorStoreRetriever:
+    def tasks_retriever(self, k: int = 5, project_id: Optional[int] = None) -> VectorStoreRetriever:
         """Trả về một LangChain Retriever object cho Tasks."""
         store = self.tasks_store
         if not store:
@@ -394,7 +414,7 @@ class VectorStoreService:
     
 
     # Hàm tìm kiếm task liên quan 
-    def retrieve_tasks_by_query(self, query: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def retrieve_tasks_by_query(self, query: str, k: int = 5, project_id: Optional[int] = None) -> List[Dict[str, Any]]:
         if not self.tasks_store:
             log.warning("tasks_store not initialized. retrieve_tasks_for_query returns empty list.")
             return []
@@ -425,7 +445,7 @@ class VectorStoreService:
         return unique
 
     # Hàm tìm kiếm task liên quan kèm score 
-    def retrieve_tasks_with_scores(self, query: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def retrieve_tasks_with_scores(self, query: str, k: int = 5, project_id: Optional[int] = None) -> List[Dict[str, Any]]:
         """ Tìm kiếm các task liên quan kèm score (cosine distance - Càng thấp -> Khoảng cách càng ngắn --> Càng giống) tương tự dựa trên truy vấn. """
         if not self.tasks_store:
             log.warning("tasks_store not initialized. retrieve_tasks_with_scores returns empty list.")
@@ -457,7 +477,7 @@ class VectorStoreService:
         return unique
 
     # Hàm lấy các task trong một project 
-    def retrieve_tasks_by_project(self, project_id: str, k: int = 10) -> List[Dict[str, Any]]:
+    def retrieve_tasks_by_project(self, project_id: int, k: int = 10) -> List[Dict[str, Any]]:
         if not self.tasks_store:
             log.warning("tasks_store not initialized. retrieve_tasks_for_project returns empty list.")
             return []
@@ -472,7 +492,7 @@ class VectorStoreService:
         return [{"content": r.page_content, "metadata": r.metadata} for r in results if not (getattr(r, "metadata", {}) or {}).get("is_deleted")]
     
     # Hàm lấy task theo user_id
-    def retrieve_tasks_by_user(self, user_id: str, project_id:str, k: int = 10) -> List[Dict[str, Any]]:
+    def retrieve_tasks_by_user(self, user_id: int, project_id:str, k: int = 10) -> List[Dict[str, Any]]:
         if not self.tasks_store:
             log.warning("tasks_store not initialized. retrieve_tasks_for_user returns empty list.")
             return []
@@ -488,7 +508,7 @@ class VectorStoreService:
     
 
     # Hàm lấy các user tham gia trong một project
-    def retrieve_users_by_project(self, project_id: str, k: int = 10) -> List[Dict[str, Any]]:
+    def retrieve_users_by_project(self, project_id: int, k: int = 10) -> List[Dict[str, Any]]:
         if not self.users_store:
             log.warning("users_store not initialized. retrieve_users_for_project returns empty list.")
             return []
@@ -513,7 +533,7 @@ class VectorStoreService:
         return out
 
     # Hàm tìm người dùng phù hợp cho văn bản nhiệm vụ
-    def retrieve_users_by_query(self, task_text: str, k: int = 5, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def retrieve_users_by_query(self, task_text: str, k: int = 5, project_id: Optional[int] = None) -> List[Dict[str, Any]]:
         if not self.users_store:
             log.warning("users_store not initialized. retrieve_users_for_task_text returns empty list.")
             return []
@@ -525,17 +545,17 @@ class VectorStoreService:
         except Exception as e:
             log.exception("users similarity_search failed: %s", e)
             return []
-        return [{"content": f"Tên: {r.page_content}. Vị trí: {r.metadata.get('position','')}", "metadata": r.metadata} for r in results if not (getattr(r, "metadata", {}) or {}).get("is_deleted")]
+        return [{"content": r.page_content, "metadata": r.metadata} for r in results if not (getattr(r, "metadata", {}) or {}).get("is_deleted")]
 
 
     # CRUD document ------------------
-    def get_task_by_id(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_task_by_id(self, task_id: int) -> Optional[Dict[str, Any]]:
         """Lấy thông tin chi tiết của một task từ vector store bằng ID."""
         if not self._ensure_stores():
             return None
         try:
             # Truy vấn trực tiếp theo id document, hàm get_by_ids yêu cầu danh sách các ids và trả về danh sách các docs
-            docs = self.tasks_store.get_by_ids([task_id])
+            docs = self.tasks_store.get_by_ids([make_task_id(task_id)])
             if not docs:
                 return None
             
@@ -546,12 +566,12 @@ class VectorStoreService:
             log.exception(f"Failed to get task by id {task_id}: {e}")
             return None
 
-    def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+    def get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
         """Lấy thông tin chi tiết của một user từ vector store bằng ID."""
         if not self._ensure_stores():
             return None
         try:
-            docs = self.users_store.get_by_ids([user_id]) #Hàm yêu cầu danh sách nên phải đưa vào là list dù chỉ 1 id
+            docs = self.users_store.get_by_ids([make_user_id(user_id)]) #Hàm yêu cầu danh sách nên phải đưa vào là list dù chỉ 1 id
             if not docs:
                 return None
             docs = [d for d in docs if not d.metadata.get("is_deleted", False)]
@@ -561,12 +581,12 @@ class VectorStoreService:
             log.exception(f"Failed to get task by id {user_id}: {e}")
             return None
 
-    def get_project_by_id(self, project_id: str) -> Optional[Dict[str, Any]]:   
+    def get_project_by_id(self, project_id: int) -> Optional[Dict[str, Any]]:   
         """Lấy thông tin chi tiết của một project từ vector store bằng ID."""
         if not self._ensure_stores():
             return None
         try:
-            docs = self.projects_store.get_by_ids([project_id]) #Hàm yêu cầu danh sách nên phải đưa vào là list dù chỉ 1 id
+            docs = self.projects_store.get_by_ids([make_project_id(project_id)]) #Hàm yêu cầu danh sách nên phải đưa vào là list dù chỉ 1 id
             if not docs:
                 return None
             docs = [d for d in docs if not d.metadata.get("is_deleted", False)]
@@ -582,10 +602,11 @@ class VectorStoreService:
             return False
         try:
             task_id = task["id"]
+            task_id_str = make_task_id(task_id)
             if force:
-                existing_docs = self.tasks_store.get_by_ids([task_id])
+                existing_docs = self.tasks_store.get_by_ids([task_id_str])
                 if existing_docs:
-                    self.tasks_store.delete(ids=[task_id])
+                    self.tasks_store.delete(ids=[task_id_str])
                     log.info(f"Xóa task {task_id} cũ trước khi upsert do force=True.")
             # Thêm doc mới
             doc = create_task_document(task)
@@ -601,10 +622,11 @@ class VectorStoreService:
             return False
         try:
             user_id = user["id"]
+            user_id_str = make_user_id(user_id)
             if force:
-                existing_docs  = self.users_store.get_by_ids([user_id])
+                existing_docs  = self.users_store.get_by_ids([user_id_str])
                 if existing_docs:
-                    self.users_store.delete(ids = [user_id])
+                    self.users_store.delete(ids = [user_id_str])
                     log.info(f"Xóa user {user_id} cũ trước khi upsert do force=True.")
             # Thêm doc mới
             doc = create_user_document(user)
@@ -620,10 +642,11 @@ class VectorStoreService:
             return False
         try:
             project_id = project["id"]
+            project_id_str = make_project_id(project_id)
             if force:
-                existing_docs  = self.projects_store.get_by_ids([project_id])
+                existing_docs  = self.projects_store.get_by_ids([project_id_str])
                 if existing_docs:
-                    self.projects_store.delete(ids = [project_id])
+                    self.projects_store.delete(ids = [project_id_str])
                     log.info(f"Xóa project {project_id} cũ trước khi upsert do force=True.")
             # Thêm doc mới
             doc = create_project_document(project)
@@ -634,35 +657,36 @@ class VectorStoreService:
             log.exception(f"Upsert project {project_id} thất bại: {e}")
             return False
     
-    def delete_task_by_id(self, task_id: str):
+    def delete_task_by_id(self, task_id: int):
         if not self._ensure_stores():
             return False
         try:
-            self.tasks_store.delete(ids=[task_id]) # Delete theo danh sách ids 
+            self.tasks_store.delete(ids=[make_task_id(task_id)]) # Delete theo danh sách ids 
             log.info(f"Đã xoá task {task_id} khỏi vector store.")
             return True
         except Exception as e:
             log.exception(f"Xóa task {task_id} thất bại: {e}")
             return False
 
-    def delete_user_by_id(self, user_id: str):
+    def delete_user_by_id(self, user_id: int):
         if not self._ensure_stores():
             return False
         try:
-            self.users_store.delete(ids=[user_id]) # Delete theo danh sách ids 
+            self.users_store.delete(ids=[make_user_id(user_id)]) # Delete theo danh sách ids 
             log.info(f"Đã xoá user {user_id} khỏi vector store.")
             return True
         except Exception as e:
             log.exception(f"Xóa user {user_id} thất bại: {e}")
             return False
     
-    def delete_project_by_id(self, project_id: str):
+    def delete_project_by_id(self, project_id: int):
         if not self._ensure_stores():
             return False
         try:
-            self.projects_store.delete(ids=[project_id]) # Delete theo danh sách ids 
+            self.projects_store.delete(ids=[make_project_id(project_id)]) # Delete theo danh sách ids 
             log.info(f"Đã xoá project {project_id} khỏi vector store.")
             return True
         except Exception as e:
             log.exception(f"Xóa project {project_id} thất bại: {e}")
             return False
+

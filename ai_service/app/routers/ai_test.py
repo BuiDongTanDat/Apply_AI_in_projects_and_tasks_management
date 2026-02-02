@@ -3,6 +3,9 @@ from fastapi import APIRouter, Depends, UploadFile, File
 from app.services.vector_store import VectorStoreService
 from fastapi import APIRouter, Depends, HTTPException
 from app.utils.extractFileHelper import extract_text_from_file, extract_text_from_multiple_files
+from app.services.xgb_service import get_xgb_service
+from app.services.fetch_data import FetchData
+from sentence_transformers import SentenceTransformer
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +24,7 @@ def get_vector_store_service():
 @test_router.get("/retrieve_tasks")
 async def test_retrieve_tasks(
     query: str,
-    project_id: str = None,
+    project_id: int = None,
     vector_store_svc: VectorStoreService = Depends(get_vector_store_service),
 ):
     """Test retrieve tasks from vector store by query + optional project_id"""
@@ -32,7 +35,7 @@ async def test_retrieve_tasks(
 @test_router.get("/retrieve_users")
 async def test_retrieve_users(
     query: str,
-    project_id: str = None,
+    project_id: int = None,
     vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
 ):
     """Test retrieve users from vector store by query + optional project_id"""
@@ -43,7 +46,7 @@ async def test_retrieve_users(
 @test_router.get("/retrieve_with_scores")
 async def test_retrieve_with_scores(
     query: str,
-    project_id: str = None,
+    project_id: int = None,
     vector_store_svc: VectorStoreService = Depends(get_vector_store_service),
 ):
     """Test retrieve tasks with scores (similarity search)"""
@@ -53,7 +56,7 @@ async def test_retrieve_with_scores(
 # Test truy vần task chỉ bằng project_id
 @test_router.get("/retrieve_tasks_by_project")
 async def test_retrieve_task_by_project(
-    project_id: str,
+    project_id: int,
     vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
 ):
     """Test retrieve tasks from vector store by project_id only"""
@@ -64,7 +67,7 @@ async def test_retrieve_task_by_project(
 # Test truy vấn user chỉ bằng project_id
 @test_router.get("/retrieve_users_by_project")
 async def test_retrieve_users_by_project(
-    project_id: str,
+    project_id: int,
     vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
 ):
     """Test retrieve users from vector store by project_id only"""
@@ -74,8 +77,8 @@ async def test_retrieve_users_by_project(
 
 @test_router.get("/retrieve_tasks_by_user")
 async def test_retrieve_task_by_user(
-    user_id: str,
-    project_id: str,
+    user_id: int,
+    project_id: int,
     vector_store_svc: VectorStoreService = Depends(get_vector_store_service)
 ):
     """Test retrieve tasks assigned to a specific user_id"""
@@ -149,4 +152,78 @@ async def test_get_data_from_api():
         "projects_json": projects,
         "tasks_json": tasks,
         "members_json": members
+    }
+
+@test_router.post("/export_done_tasks")
+async def test_export_done_tasks(
+    export_format: str = "csv"
+):
+    """Test exporting DONE tasks to CSV or JSON"""
+    from app.services.fetch_data import FetchData
+
+    out_path = await FetchData.fetch_all_done_tasks_and_export(export_format=export_format)
+    return {"export_format": export_format, "output_path": out_path}
+
+@test_router.post("/retrain_xgb_model")
+async def test_retrain_xgb_model():
+    """
+    Test retrain XGB model. Nếu chưa có file train thì tự động fetch dữ liệu DONE về.
+    """
+    import os
+    from app.services.xgb_service import get_xgb_service
+    from app.services.fetch_data import FetchData
+    from sentence_transformers import SentenceTransformer
+
+    train_path = "app/data/train/tasks_done_train.csv"
+    if not os.path.exists(train_path):
+        await FetchData.fetch_all_done_tasks_and_export(export_format="csv")
+
+    embed_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", device="cpu")
+    xgb_service = get_xgb_service(embed_model=embed_model)
+    result = xgb_service.retrain_and_save(csv_path=train_path)
+    return {"status": "success", "output": result}
+
+@test_router.post("/incremental_train_xgb_model")
+async def test_incremental_train_xgb_model():
+    """
+    Test incremental train XGB model with new data.
+    Nếu chưa có file train thì tự động fetch dữ liệu DONE về.
+    """
+    import os
+    from app.services.xgb_service import get_xgb_service
+    from app.services.fetch_data import FetchData
+    from sentence_transformers import SentenceTransformer
+
+    train_path = "app/data/train/tasks_done_train.csv"
+    if not os.path.exists(train_path):
+        await FetchData.fetch_all_done_tasks_and_export(export_format="csv")
+
+    embed_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", device="cpu")
+    xgb_service = get_xgb_service(embed_model=embed_model)
+    result = xgb_service.incremental_train(csv_path=train_path)
+    return {"status": "success", "output": result}
+
+@test_router.get("/model_loader_info")
+async def test_model_loader_info():
+    """Test ModelsLoader static methods to get model info"""
+    from app.services.models_loader import ModelsLoader
+
+    llm_model = ModelsLoader.llm()
+    emb_model = ModelsLoader.embeddings()
+    xgb_model = ModelsLoader.xgb_model()
+    scaler_model = ModelsLoader.scaler()
+
+    return {
+        "llm_model": {
+            "type": str(type(llm_model)),
+        },
+        "emb_model": {
+            "type": str(type(emb_model)),
+        },
+        "xgb_model": {
+            "type": str(type(xgb_model)),
+        },
+        "scaler_model": {
+            "type": str(type(scaler_model)),
+        }
     }
