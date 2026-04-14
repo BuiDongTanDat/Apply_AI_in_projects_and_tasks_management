@@ -1,0 +1,54 @@
+import 'reflect-metadata'
+import dotenv from 'dotenv'
+dotenv.config()
+import express from 'express'
+import cors from 'cors'
+import { createServer } from 'http'
+const app = express()
+
+import { router } from './routes/index.js'
+import { initSyncAICronJob } from './services/cron/sync-ai.cron.js'
+
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+import morgan from 'morgan'
+import { AppDataSource } from './db/data-source.js'
+import { notificationWsService } from './services/notification/notification-ws.service.js'
+
+app.use(morgan('dev'))
+app.use(cors())
+
+// connect db
+AppDataSource.initialize()
+	.then(() => {
+		console.log('✅ DB connected')
+		const server = createServer(app)
+		notificationWsService.init(server)
+
+		// Initialize cron jobs
+		initSyncAICronJob()
+
+		server.listen(3000, () => console.log('🚀 Running on http://localhost:3000'))
+	})
+	.catch((err) => console.error('❌ DB init error:', err))
+
+app.use('/api', router)
+
+app.use((req, res, next) => {
+	const error = new Error('Not found')
+	next(error)
+})
+
+// Error handling function
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//@ts-ignore
+app.use((error, req, res, next) => {
+	const statusCode = error.statusCode || 500
+	console.log('error', error)
+	return res.status(statusCode).json({
+		status: 'error',
+		code: statusCode,
+		message: `${statusCode}: ` + error.message || 'Internal Server Error'
+	})
+})

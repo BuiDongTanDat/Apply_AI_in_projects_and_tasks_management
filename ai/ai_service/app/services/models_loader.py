@@ -1,0 +1,305 @@
+import os
+import joblib
+import threading
+import psycopg2
+from pathlib import Path
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sentence_transformers import SentenceTransformer
+from langchain_huggingface import HuggingFaceEmbeddings
+from cachetools import LRUCache # Hỗ trợ lưu instance và xóa các instance cũ
+import httpx
+import logging
+
+# logger = logging.getLogger("LLM_HTTP_LOGGER")
+# logger.setLevel(logging.INFO)
+
+# def log_request(request: httpx.Request):
+#     logger.info("="*50)
+#     logger.info(f"LLM REQUEST: {request.method} {request.url}")
+#     logger.info(f"HEADERS: {dict(request.headers)}")
+#     try:
+#         request.read()
+#         logger.info(f"BODY: {request.content.decode('utf-8') if request.content else ''}")
+#     except Exception as e:
+#         logger.info(f"BODY: Could not read body ({e})")
+#     logger.info("="*50)
+
+# def log_response(response: httpx.Response):
+#     logger.info("="*50)
+#     logger.info(f"LLM RESPONSE STATUS: {response.status_code}")
+#     logger.info(f"HEADERS: {dict(response.headers)}")
+#     try:
+#         response.read()
+#         logger.info(f"BODY: {response.content.decode('utf-8') if response.content else ''}")
+#     except Exception as e:
+#          logger.info(f"BODY: Could not read body ({e})")
+#     logger.info("="*50)
+
+# shared_http_client = httpx.Client(
+#     event_hooks={'request': [log_request], 'response': [log_response]}
+# )
+
+# Load environment variables
+load_dotenv()
+
+
+class ModelsLoader:
+    _llm_cache = LRUCache(maxsize=20) # Lưu tối đa 20 instance
+    _llms_lock = threading.Lock()
+    _emb = None
+    _emb_sentence = None  # Dùng riêng cho XGB (dùng encode: normalization = True)
+    _xgb = None
+    _xgb_path = None  # Lưu thông tin model hiện tại
+    _scaler = None
+    _le_type = None
+    _le_priority = None
+
+    # Base path
+    MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
+    # Embedding model config
+    EMBEDDING_HF_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    EMBEDDING_LOCAL_DIR = MODEL_DIR / "embedding_model"
+
+    @staticmethod
+    def llm(api_key: str = None, provider: str = "groq", model_name: str = None):
+        
+        # Nếu không truyền API Key, sử dụng cấu hình mặc định từ biến môi trường
+        if not api_key:
+            if provider == "groq":
+                api_key = os.getenv("GROQ_API_KEY")
+            else:
+                api_key = os.getenv("GEMINI_API_KEY")
+
+        if not api_key:
+             print(f"[ModelsLoader] Missing API key for {provider}")
+             return None
+        
+        #Xử lý model name
+        if not model_name:
+            if provider == "groq":
+                model_name = os.getenv("GROQ_MODEL_NAME", "qwen/qwen3-32b")
+            else:
+                model_name = os.getenv("GEMINI_MODEL_GENERIC", "gemini-2.5-flash")
+                    
+
+        # Tạo Cache Key
+        cache_key = f"{provider}_{api_key}_{model_name}"
+        
+        # Trả về nếu đã có trong Cache
+        if cache_key in ModelsLoader._llm_cache:
+            print(f"[ModelsLoader] Sử dụng LLM cache: {model_name} ...{api_key[-4:] if len(api_key)>4 else api_key}")
+            return ModelsLoader._llm_cache[cache_key]
+
+        # Lock thread để khởi tạo an toàn
+        with ModelsLoader._llms_lock:
+            # Check lại lần nữa trong Lock để tránh race condition
+            if cache_key in ModelsLoader._llm_cache:
+                return ModelsLoader._llm_cache[cache_key]
+                
+            # --- Thử kết nối với Groq ---
+            if provider == "groq":
+                try:
+                    new_llm = ChatGroq(
+                        model_name=model_name, # Dùng trực tiếp
+                        api_key=api_key,
+                        temperature=0,
+                        max_tokens=8192,
+                        reasoning_format="parsed",
+                        timeout=None,
+                        max_retries=2,
+                        # http_client=shared_http_client,
+                    )
+                    print(f"[ModelsLoader] Đã load LLM Groq:{model_name} ...{api_key[-4:] if len(api_key)>4 else api_key}")
+                    ModelsLoader._llm_cache[cache_key] = new_llm
+                    return new_llm
+                except Exception as e:
+                    print(f"[ModelsLoader] Groq LLM failed: {e}")
+                    return None
+
+            # --- Kết nối với Gemini ---
+            elif provider == "gemini":
+                try:
+                    gemini_model_name = model_name # Dùng trực tiếp
+                    new_llm = ChatGoogleGenerativeAI(
+                        model=gemini_model_name,
+                        google_api_key=api_key,
+                        temperature=0,
+                        max_output_tokens=None,
+                    )
+                    print(f"[ModelsLoader] Đã load LLM Gemini: {model_name} ...{api_key[-4:] if len(api_key)>4 else api_key}")
+                    ModelsLoader._llm_cache[cache_key] = new_llm
+                    return new_llm
+                except Exception as e:
+                    print(f"[ModelsLoader] Gemini LLM failed: {e}")
+                    return None
+            return None
+
+    @staticmethod
+    def _ensure_embedding_local():
+        """Tải model từ HuggingFace về local nếu chưa có. Trả về local path."""
+        local_dir = ModelsLoader.EMBEDDING_LOCAL_DIR
+        if local_dir.exists() and any(local_dir.iterdir()):
+            return str(local_dir)
+        print(f"[ModelsLoader] Model chưa có ở local, đang tải từ HuggingFace Hub...")
+        model = SentenceTransformer(ModelsLoader.EMBEDDING_HF_NAME)
+        local_dir.mkdir(parents=True, exist_ok=True)
+        model.save(str(local_dir))
+        print(f"[ModelsLoader] Đã lưu model vào: {local_dir}")
+        return str(local_dir)
+
+    @staticmethod
+    def embeddings():
+        if ModelsLoader._emb is None:
+            model_path = ModelsLoader._ensure_embedding_local()
+            print(f"[ModelsLoader] Đang load HuggingFaceEmbeddings từ LOCAL: {model_path}")
+            ModelsLoader._emb = HuggingFaceEmbeddings(
+                model_name=model_path,
+                model_kwargs={"device": "cpu"},
+            )
+        return ModelsLoader._emb
+
+    @staticmethod
+    def xgb_sentence_embeddings():
+        if ModelsLoader._emb_sentence is None:
+            model_path = ModelsLoader._ensure_embedding_local()
+            print(f"[ModelsLoader] Đang load SentenceTransformer cho XGB từ LOCAL: {model_path}")
+            ModelsLoader._emb_sentence = SentenceTransformer(
+                model_path,
+                device="cpu",
+            )
+        return ModelsLoader._emb_sentence
+
+    @staticmethod
+    def preload_embeddings():
+        """Preload cả 2 embedding model khi container start."""
+        print("[ModelsLoader] === PRELOAD EMBEDDING MODELS ===")
+        ModelsLoader._ensure_embedding_local()
+        ModelsLoader.embeddings()
+        ModelsLoader.xgb_sentence_embeddings()
+        print("[ModelsLoader] === PRELOAD HOÀN TẤT ===")
+
+    @staticmethod
+    def clear_llm_cache():
+        """Xóa toàn bộ cache LLM, dùng khi cần reset connection hoặc đổi API key."""
+        with ModelsLoader._llms_lock:
+            ModelsLoader._llm_cache.clear()
+            print("[ModelsLoader] LLM cache đã được xóa.")
+
+    @staticmethod
+    def _get_latest_model_path_from_db():
+        """Truy vấn DB lấy path model mới nhất mà không phụ thuộc XGBService."""
+        db_conn = os.getenv("DB_CONNECT_STRING")
+        if not db_conn:
+            return None
+        try:
+            with psycopg2.connect(db_conn) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT model_path FROM xgb_model_versions ORDER BY updated_at DESC, id DESC LIMIT 1"
+                    )
+                    row = cur.fetchone()
+                    return row[0] if row else None
+        except Exception as e:
+            print(f"[ModelsLoader] DB Query Error: {e}")
+            return None
+
+    @staticmethod
+    def xgb_model(force_reload=False):
+        latest_path = ModelsLoader._get_latest_model_path_from_db() or str(
+            ModelsLoader.MODEL_DIR / "xgb_sp.pkl"
+        )
+
+        if (
+            force_reload
+            or ModelsLoader._xgb is None
+            or ModelsLoader._xgb_path != latest_path
+        ):
+            if Path(latest_path).exists():
+                ModelsLoader._xgb = joblib.load(latest_path)
+                ModelsLoader._xgb_path = latest_path
+                print(f"[ModelsLoader] Đã load XGB: {latest_path}")
+            else:
+                print(
+                    f"[ModelsLoader] Warning: Model path {latest_path} không tìm thấy./n Sử dụng model mặc định."
+                )
+                ModelsLoader._xgb = joblib.load(
+                    ModelsLoader.MODEL_DIR / "xgb_sp.pkl")
+                ModelsLoader._xgb_path = str(
+                    ModelsLoader.MODEL_DIR / "xgb_sp.pkl")
+        return ModelsLoader._xgb
+
+    @staticmethod
+    def get_xgb_model_info():
+        """Lấy thông tin model XGB hiện tại."""
+        model = ModelsLoader.xgb_model()
+        if model is None:
+            return {"status": "No model loaded"}
+        info = {
+            "model_path": ModelsLoader._xgb_path,
+            "n_estimators": model.get_params().get("n_estimators", None),
+            "max_depth": model.get_params().get("max_depth", None),
+            "learning_rate": model.get_params().get("learning_rate", None),
+        }
+        return info
+
+    @staticmethod
+    def reload_xgb_model(model_path: str):
+        """Reload model từ một đường dẫn cụ thể vào cache."""
+        if Path(model_path).exists():
+            ModelsLoader._xgb = joblib.load(model_path)
+            ModelsLoader._xgb_path = model_path
+            print(f"[ModelsLoader] Cache reloaded with: {model_path}")
+
+    @staticmethod
+    def scaler():
+        if ModelsLoader._scaler is None:
+            model_dir = Path(__file__).resolve().parent.parent / "models"
+            scaler_path = model_dir / "scaler.pkl"
+            if scaler_path.exists():
+                ModelsLoader._scaler = joblib.load(scaler_path)
+            else:
+                # Nếu không có file, tạo mới như xgb_service
+                ModelsLoader._scaler = MinMaxScaler()
+        return ModelsLoader._scaler
+
+    @staticmethod
+    def le_type():
+        if ModelsLoader._le_type is None:
+            model_dir = Path(__file__).resolve().parent.parent / "models"
+            le_type_path = model_dir / "le_type.pkl"
+            if le_type_path.exists():
+                ModelsLoader._le_type = joblib.load(le_type_path)
+            else:
+                le_type = LabelEncoder()
+                le_type.fit(
+                    [
+                        "FEATURE",
+                        "BUG",
+                        "IMPROVEMENT",
+                        "RESEARCH",
+                        "DOCUMENTATION",
+                        "TESTING",
+                        "DEPLOYMENT",
+                        "ENHANCEMENT",
+                        "MAINTENANCE",
+                        "OTHER",
+                    ]
+                )
+                ModelsLoader._le_type = le_type
+        return ModelsLoader._le_type
+
+    @staticmethod
+    def le_priority():
+        if ModelsLoader._le_priority is None:
+            model_dir = Path(__file__).resolve().parent.parent / "models"
+            le_priority_path = model_dir / "le_priority.pkl"
+            if le_priority_path.exists():
+                ModelsLoader._le_priority = joblib.load(le_priority_path)
+            else:
+                le_priority = LabelEncoder()
+                le_priority.fit(["HIGH", "MEDIUM", "LOW", "URGENT"])
+                ModelsLoader._le_priority = le_priority
+        return ModelsLoader._le_priority

@@ -1,0 +1,444 @@
+// ─── GenerateGanttModal styles (Minimal / Flat design) ────────────────────────
+
+.gg-modal {
+  .ant-modal-content {
+    border-radius: 6px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+  }
+
+  .ant-modal-close {
+    top: 16px;
+    right: 16px;
+    color: #9ca3af;
+    &:hover {
+      background: #f3f4f6;
+      color: #374151;
+    }
+  }
+}
+
+// ── Root container ────────────────────────────────────────────────────────────
+.gg-root {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #fff;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.gg-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f3f4f6;
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4f46e5;
+    margin-top: 2px;
+    
+    svg {
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  &__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px;
+    line-height: 1.3;
+  }
+
+  &__sub {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+  }
+}
+
+// ── Progress bar ──────────────────────────────────────────────────────────────
+.gg-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  &__bar {
+    flex: 1;
+    height: 6px;
+    background: #f3f4f6;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  &__fill {
+    height: 100%;
+    background: #4f46e5;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4f46e5;
+    min-width: 36px;
+    text-align: right;
+  }
+}
+
+// ── Dropzone ──────────────────────────────────────────────────────────────────
+.gg-dropzone {
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  background: #fafafa;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #9ca3af;
+    background: #f3f4f6;
+  }
+
+  &--active {
+    border-color: #4f46e5;
+    background: #f0fdfa; // Very slight tint for active drop
+  }
+
+  &--has-file {
+    cursor: default;
+    background: #fff;
+    border-style: solid;
+    border-color: #e5e7eb;
+
+    &:hover {
+      background: #fff;
+      border-color: #e5e7eb;
+    }
+  }
+
+  &__input {
+    display: none;
+  }
+
+  &__icon {
+    color: #9ca3af;
+    margin-bottom: 4px;
+  }
+
+  &__text {
+    font-size: 13px;
+    color: #374151;
+    margin: 0;
+
+    span {
+      color: #4f46e5;
+      font-weight: 500;
+      text-decoration: underline;
+    }
+  }
+
+  &__hint {
+    font-size: 12px;
+    color: #9ca3af;
+    margin: 0;
+  }
+}
+
+// ── File preview ──────────────────────────────────────────────────────────────
+.gg-file-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 4px 0;
+
+  &__icon {
+    color: #4f46e5;
+    flex-shrink: 0;
+  }
+
+  &__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__size {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  &__remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #ef4444;
+      background: #fee2e2;
+    }
+  }
+}
+
+// ── Analyzing spinner ─────────────────────────────────────────────────────────
+.gg-analyzing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+
+  &__spinner {
+    color: #4f46e5;
+    animation: gg-spin 1s linear infinite;
+  }
+
+  &__text {
+    font-size: 13px;
+    color: #4b5563;
+    margin: 0;
+  }
+}
+
+@keyframes gg-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ── Schedule rows ─────────────────────────────────────────────────────────────
+.gg-schedules {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #fff;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+}
+
+.gg-schedule-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fff;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &--pending {
+    opacity: 0.6;
+    background: #fafafa;
+  }
+
+  &--generating {
+    background: #fff;
+  }
+
+  &--done {
+    background: #fff;
+  }
+
+  &--error {
+    background: #fdf2f2;
+  }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &__info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: #4b5563;
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+    flex-shrink: 0;
+
+    &--error {
+      color: #b91c1c;
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    &--loading {
+      color: #4338ca;
+      background: #e0e7ff;
+      border-color: #c7d2fe;
+    }
+  }
+}
+
+// ── Schedule icons ────────────────────────────────────────────────────────────
+.gg-icon {
+  flex-shrink: 0;
+
+  &--done { color: #10b981; }
+  &--error { color: #ef4444; }
+  &--pending { color: #d1d5db; }
+
+  &--loading {
+    color: #4f46e5;
+    animation: gg-spin 1s linear infinite;
+  }
+}
+
+// ── Complete summary ──────────────────────────────────────────────────────────
+.gg-complete {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #374151;
+  }
+
+  &__icon {
+    color: #10b981;
+    flex-shrink: 0;
+  }
+}
+
+// ── Error ─────────────────────────────────────────────────────────────────────
+.gg-error {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #fdf2f2;
+    border: 1px solid #f87171;
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #b91c1c;
+
+    svg { flex-shrink: 0; margin-top: 2px; }
+  }
+}
+
+// ── Buttons & actions ─────────────────────────────────────────────────────────
+.gg-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.gg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+
+  &--primary {
+    background: #111827;
+    color: #fff;
+    border-color: #111827;
+
+    &:hover:not(:disabled) {
+      background: #374151;
+      border-color: #374151;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &--ghost {
+    background: #fff;
+    color: #4b5563;
+    border-color: #e5e7eb;
+
+    &:hover {
+      background: #f9fafb;
+      color: #111827;
+    }
+  }
+
+  &--sm {
+    padding: 4px 12px;
+    font-size: 12px;
+  }
+}

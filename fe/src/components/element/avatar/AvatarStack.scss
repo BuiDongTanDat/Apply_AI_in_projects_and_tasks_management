@@ -1,0 +1,194 @@
+.avatar-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+
+  &__container {
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+
+  &__item {
+    position: relative;
+    border: 2px solid white;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:not(:first-child) {
+      margin-left: -0.75rem;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 999 !important;
+    }
+  }
+
+  &__avatar {
+    display: block;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &__more {
+    .avatar-stack__avatar {
+      background: #f3f4f6;
+      color: #6b7280;
+      border: 2px solid #e5e7eb;
+    }
+
+    .avatar-stack__more-text {
+      font-weight: 600;
+      font-size: 0.75rem;
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    &:hover {
+      .avatar-stack__avatar {
+        background: #e5e7eb;
+      }
+    }
+  }
+
+  &__count {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+    margin-left: 0.25rem;
+  }
+
+  // Size variants
+  &--sm {
+    .avatar-stack__item {
+      &:not(:first-child) {
+        margin-left: -0.5rem;
+      }
+    }
+
+    .avatar-stack__avatar {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    .avatar-stack__more-text {
+      font-size: 0.625rem;
+    }
+
+    .avatar-stack__count {
+      font-size: 0.75rem;
+    }
+  }
+
+  &--md {
+    .avatar-stack__item {
+      &:not(:first-child) {
+        margin-left: -0.75rem;
+      }
+    }
+
+    .avatar-stack__avatar {
+      width: 2.25rem;
+      height: 2.25rem;
+    }
+
+    .avatar-stack__more-text {
+      font-size: 0.75rem;
+    }
+
+    .avatar-stack__count {
+      font-size: 0.875rem;
+    }
+  }
+
+  &--lg {
+    .avatar-stack__item {
+      &:not(:first-child) {
+        margin-left: -1rem;
+      }
+
+      border-width: 3px;
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    .avatar-stack__avatar {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .avatar-stack__more-text {
+      font-size: 0.875rem;
+    }
+
+    .avatar-stack__count {
+      font-size: 1rem;
+    }
+  }
+}
+
+// Horizontal layout variant
+.avatar-stack--horizontal {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+
+  .avatar-stack__count {
+    margin-left: 0;
+  }
+}
+
+// No border variant for clean look
+.avatar-stack--no-border {
+  .avatar-stack__item {
+    border: none;
+  }
+}
+
+// Compact variant with tighter spacing
+.avatar-stack--compact {
+  .avatar-stack__item {
+    &:not(:first-child) {
+      margin-left: -1rem;
+    }
+  }
+
+  &.avatar-stack--sm {
+    .avatar-stack__item {
+      &:not(:first-child) {
+        margin-left: -0.75rem;
+      }
+    }
+  }
+
+  &.avatar-stack--lg {
+    .avatar-stack__item {
+      &:not(:first-child) {
+        margin-left: -1.25rem;
+      }
+    }
+  }
+}
+
+// Animation for when avatars are added/removed
+.avatar-stack__item {
+  animation: fadeInScale 0.3s ease;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
