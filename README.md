@@ -30,6 +30,7 @@
 
 Taskee is a modern, AI-powered platform for project and task management, designed to streamline workflows for teams and individuals. It features advanced AI assistance, flexible project organization, and a clean, responsive user interface.
 
+How it work? [Watch the video](https://youtu.be/1fqZCE97Y44) 
 ---
 
 ## Frontend
